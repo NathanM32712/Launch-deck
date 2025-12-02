@@ -59,33 +59,23 @@
 <body>
 
   <!-- Silent icon in top-left corner -->
-  <a href="../index.html" style="position: fixed; top: 12px; left: 12px; z-index: 100;">
-    <img src="icon.png" alt="" style="height: 60px; background: black; border-radius: 4px;">
+  <a href="../Launch-Deck" style="position: fixed; top: 12px; left: 12px; z-index: 100;">
+    <img src="../icon.png" alt="" style="height: 60px; background: black; border-radius: 4px;">
   </a>
 
   <div class="title-bar">
-    <h1>Launch-Deck</h1>
+    <h1>Launch Deck</h1>
   </div>
 
-  <div class="username" id="userDisplay">Device ID: ...</div>
+  <div class="username" id="userDisplay">Welcome!</div>
 
   <div class="button-grid">
-    <button class="game-button" onclick="location.href='/nathan-s-casino/home.html'">Casino</button>
-    <button class="game-button" onclick="location.href='/Tower Defense/Tower Defense.html'">Tower Defence</button>
-    <button class="game-button" onclick="location.href='/clock/clock.html'">clock </button>
-    <button class="game-button" onclick="location.href='/othergames/laser-run.html'">laser run</button>
-    <button class="game-button" onclick="location.href='/othergames/sandbox.html'">Sandbox</button>
+    <button class="game-button" onclick="location.href='Nathan-s-Casino/home.html'">Casino</button>
+    <button class="game-button" onclick="location.href='Tower Defense/Tower Defense.html'">Tower Defence</button>
+    <button class="game-button" onclick="location.href='clock/clock.html'">Clock</button>
+    <button class="game-button" onclick="location.href='othergames/laser-run.html'">Laser Run</button>
+    <button class="game-button" onclick="location.href='othergames/sandbox.html'">Sandbox</button>
   </div>
-
-  <script>
-    function getCookieValue(name) {
-      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-      return match ? decodeURIComponent(match[2]) : null;
-    }
-
-    const deviceId = getCookieValue("device-id") || "unknown";
-    document.getElementById("userDisplay").innerText = `Device ID: ${deviceId}`;
-  </script>
 
 </body>
 </html>
