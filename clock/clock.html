@@ -25,10 +25,10 @@
   <h2>Current</h2>
   <div class="clock" id="current">--:--:--</div>
 
-  <h2>Left (until next start)</h2>
+  <h2>Current Time Left</h2>
   <div class="clock" id="left">--:--:--</div>
 
-  <h2>Next Start</h2>
+  <h2>End</h2>
   <div class="clock" id="end">--:--:--</div>
 
   <p>Enter schedule lines (<code>start/end</code> times like <code>8:00/8:58</code>, one per line):</p>
@@ -91,13 +91,22 @@ function applySchedule(){
   setCookie("schedule", text, 365);
   const lines = text.split(/\n+/);
   periods = [];
+  let lastEnd = null;
+
   for(const line of lines){
     const parts = line.split("/");
     if(parts.length===2){
       try{
         const start = toSeconds(parts[0].trim());
         const end = toSeconds(parts[1].trim());
-        periods.push([start,end]);
+
+        // insert break if gap exists
+        if(lastEnd!==null && start>lastEnd){
+          periods.push([lastEnd,start]); // break interval
+        }
+
+        periods.push([start,end]); // normal period
+        lastEnd = end;
       }catch(e){}
     }
   }
@@ -118,15 +127,10 @@ function updateClock(){
     for(let i=0;i<periods.length;i++){
       const [start,endSec] = periods[i];
       if(currentSec>=start && currentSec<=endSec){
-        // inside a period
-        let targetEnd = endSec;
-        if(i+1<periods.length){
-          targetEnd = periods[i+1][0]; // extend countdown to next start
-        }
-        left = formatDuration(targetEnd-currentSec);
+        left = formatDuration(endSec-currentSec);
 
         const endDate = new Date(now);
-        endDate.setHours(Math.floor(targetEnd/3600), Math.floor((targetEnd%3600)/60), targetEnd%60);
+        endDate.setHours(Math.floor(endSec/3600), Math.floor((endSec%3600)/60), endSec%60);
         end = formatClock(endDate.getHours(), endDate.getMinutes(), endDate.getSeconds());
         break;
       }
