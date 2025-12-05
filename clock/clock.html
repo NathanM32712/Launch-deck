@@ -26,11 +26,14 @@
   <h2>Current</h2>
   <div class="clock" id="current">--:--:--</div>
 
-  <h2>Left</h2>
+  <h2>Left (Period)</h2>
   <div class="clock" id="left">--:--:--</div>
 
-  <h2>End</h2>
+  <h2>End (Period)</h2>
   <div class="clock" id="end">--:--:--</div>
+
+  <h2>Break Left</h2>
+  <div class="clock" id="break">--:--:--</div>
 
   <p>Enter schedule lines (<code>start/end</code> times like <code>8:00/8:58</code>, one per line):</p>
   <textarea id="scheduleBox"></textarea><br/>
@@ -58,7 +61,6 @@ function setCookie(name,value,days){
   d.setTime(d.getTime()+(days*24*60*60*1000));
   document.cookie = name+"="+encodeURIComponent(value)+";expires="+d.toUTCString()+";path=/";
 }
-
 function getCookie(name){
   const cname = name+"=";
   const decoded = decodeURIComponent(document.cookie);
@@ -74,15 +76,14 @@ function toSeconds(t){
   const [h,m] = t.split(":").map(Number);
   return h*3600 + m*60;
 }
-
 function formatClock(h,m,s){
   let hrs = h;
   let ampm = hrs >= 12 ? "PM" : "AM";
   hrs = hrs % 12; if (hrs===0) hrs=12;
   return `${hrs}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")} ${ampm}`;
 }
-
 function formatDuration(sec){
+  if(sec<0) return "--:--:--";
   const hrs = String(Math.floor(sec/3600)).padStart(2,"0");
   const mins = String(Math.floor((sec%3600)/60)).padStart(2,"0");
   const secs = String(sec%60).padStart(2,"0");
@@ -91,7 +92,7 @@ function formatDuration(sec){
 
 function applySchedule(){
   const text = document.getElementById("scheduleBox").value.trim();
-  setCookie("schedule", text, 365); // save for 1 year
+  setCookie("schedule", text, 365);
   const lines = text.split(/\n+/);
   periods = [];
   for(const line of lines){
@@ -105,7 +106,6 @@ function applySchedule(){
     }
   }
 }
-
 function resetSchedule(){
   document.getElementById("scheduleBox").value = defaultSchedule;
   applySchedule();
@@ -116,27 +116,44 @@ function updateClock(){
   const currentSec = now.getHours()*3600 + now.getMinutes()*60 + now.getSeconds();
   const current = formatClock(now.getHours(), now.getMinutes(), now.getSeconds());
 
-  let left="--:--:--", end="--:--:--";
+  let left="--:--:--", end="--:--:--", breakLeft="--:--:--";
 
   if(periods.length>0){
-    for(const [start,endSec] of periods){
+    let inPeriod = false;
+    for(let i=0;i<periods.length;i++){
+      const [start,endSec] = periods[i];
       if(currentSec>=start && currentSec<=endSec){
+        inPeriod = true;
         left = formatDuration(endSec-currentSec);
         const endDate = new Date(now);
         endDate.setHours(Math.floor(endSec/3600), Math.floor((endSec%3600)/60), endSec%60);
         end = formatClock(endDate.getHours(), endDate.getMinutes(), endDate.getSeconds());
+
+        if(i+1<periods.length){
+          const nextStart = periods[i+1][0];
+          breakLeft = formatDuration(nextStart - currentSec);
+        }
         break;
       }
     }
+    if(!inPeriod){
+      for(const [start,endSec] of periods){
+        if(currentSec < start){
+          breakLeft = formatDuration(start-currentSec);
+          end = formatClock(Math.floor(start/3600), Math.floor((start%3600)/60), start%60);
+          break;
+        }
+      }
+    }
   }
-  document.title = `${left}/${current}`;
 
+  document.title = `${left}/${current}`;
   document.getElementById("current").textContent = current;
   document.getElementById("left").textContent = left;
   document.getElementById("end").textContent = end;
+  document.getElementById("break").textContent = breakLeft;
 }
 
-// On startup: load cookie or default
 window.onload = function(){
   const saved = getCookie("schedule");
   document.getElementById("scheduleBox").value = saved || defaultSchedule;
