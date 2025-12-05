@@ -33,17 +33,9 @@
   <div class="clock" id="end">--:--:--</div>
 
   <p>Enter schedule lines (<code>start/end</code> times like <code>8:00/8:58</code>, one per line):</p>
-  <textarea id="scheduleBox">
-08:00/08:58
-09:02/09:44
-09:48/10:30
-10:34/11:16
-11:20/12:23
-12:27/13:25
-13:29/14:27
-14:31/15:30
-15:30/32:00</textarea><br/>
+  <textarea id="scheduleBox"></textarea><br/>
   <button onclick="applySchedule()">Apply Schedule</button>
+  <button onclick="resetSchedule()">Reset Schedule</button>
 
   <footer>
     <p>Made by Nathan Marty</p>
@@ -51,6 +43,32 @@
 
 <script>
 let periods = [];
+const defaultSchedule = `08:00/08:58
+09:02/09:44
+09:48/10:30
+10:34/11:16
+11:20/12:23
+12:27/13:25
+13:29/14:27
+14:31/15:30
+15:30/32:00`;
+
+function setCookie(name,value,days){
+  const d = new Date();
+  d.setTime(d.getTime()+(days*24*60*60*1000));
+  document.cookie = name+"="+encodeURIComponent(value)+";expires="+d.toUTCString()+";path=/";
+}
+
+function getCookie(name){
+  const cname = name+"=";
+  const decoded = decodeURIComponent(document.cookie);
+  const arr = decoded.split(";");
+  for(let c of arr){
+    c = c.trim();
+    if(c.indexOf(cname)===0) return c.substring(cname.length);
+  }
+  return "";
+}
 
 function toSeconds(t){
   const [h,m] = t.split(":").map(Number);
@@ -72,7 +90,9 @@ function formatDuration(sec){
 }
 
 function applySchedule(){
-  const lines = document.getElementById("scheduleBox").value.trim().split(/\n+/);
+  const text = document.getElementById("scheduleBox").value.trim();
+  setCookie("schedule", text, 365); // save for 1 year
+  const lines = text.split(/\n+/);
   periods = [];
   for(const line of lines){
     const parts = line.split("/");
@@ -84,6 +104,11 @@ function applySchedule(){
       }catch(e){}
     }
   }
+}
+
+function resetSchedule(){
+  document.getElementById("scheduleBox").value = defaultSchedule;
+  applySchedule();
 }
 
 function updateClock(){
@@ -111,11 +136,14 @@ function updateClock(){
   document.getElementById("end").textContent = end;
 }
 
-applySchedule();
-setInterval(updateClock,1000);
-updateClock();
+// On startup: load cookie or default
+window.onload = function(){
+  const saved = getCookie("schedule");
+  document.getElementById("scheduleBox").value = saved || defaultSchedule;
+  applySchedule();
+  setInterval(updateClock,1000);
+  updateClock();
+};
 </script>
 </body>
-
 </html>
-
