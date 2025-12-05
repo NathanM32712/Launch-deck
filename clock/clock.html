@@ -12,7 +12,6 @@
     .clock { font-size: 2rem; font-weight: bold; }
     textarea { width:100%; height:120px; margin-top:1rem; font-family:monospace; }
     button { margin-top:0.5rem; padding:6px 12px; border-radius:6px; cursor:pointer; }
-    .hubBtn { background:linear-gradient(180deg,#46d37a,#2fa85a); color:#012a12; font-weight:700; }
     footer { margin-top:2rem; font-size:14px; color:#7fbfdc; text-align:center; }
   </style>
 </head>
@@ -26,14 +25,11 @@
   <h2>Current</h2>
   <div class="clock" id="current">--:--:--</div>
 
-  <h2>Left (Period)</h2>
+  <h2>Time Left</h2>
   <div class="clock" id="left">--:--:--</div>
 
-  <h2>End (Period)</h2>
+  <h2>end</h2>
   <div class="clock" id="end">--:--:--</div>
-
-  <h2>Break Left</h2>
-  <div class="clock" id="break">--:--:--</div>
 
   <p>Enter schedule lines (<code>start/end</code> times like <code>8:00/8:58</code>, one per line):</p>
   <textarea id="scheduleBox"></textarea><br/>
@@ -116,33 +112,23 @@ function updateClock(){
   const currentSec = now.getHours()*3600 + now.getMinutes()*60 + now.getSeconds();
   const current = formatClock(now.getHours(), now.getMinutes(), now.getSeconds());
 
-  let left="--:--:--", end="--:--:--", breakLeft="--:--:--";
+  let left="--:--:--", end="--:--:--";
 
   if(periods.length>0){
-    let inPeriod = false;
     for(let i=0;i<periods.length;i++){
       const [start,endSec] = periods[i];
       if(currentSec>=start && currentSec<=endSec){
-        inPeriod = true;
-        left = formatDuration(endSec-currentSec);
-        const endDate = new Date(now);
-        endDate.setHours(Math.floor(endSec/3600), Math.floor((endSec%3600)/60), endSec%60);
-        end = formatClock(endDate.getHours(), endDate.getMinutes(), endDate.getSeconds());
-
+        // inside a period
+        let targetEnd = endSec;
         if(i+1<periods.length){
-          const nextStart = periods[i+1][0];
-          breakLeft = formatDuration(nextStart - currentSec);
+          targetEnd = periods[i+1][0]; // extend countdown to next start
         }
+        left = formatDuration(targetEnd-currentSec);
+
+        const endDate = new Date(now);
+        endDate.setHours(Math.floor(targetEnd/3600), Math.floor((targetEnd%3600)/60), targetEnd%60);
+        end = formatClock(endDate.getHours(), endDate.getMinutes(), endDate.getSeconds());
         break;
-      }
-    }
-    if(!inPeriod){
-      for(const [start,endSec] of periods){
-        if(currentSec < start){
-          breakLeft = formatDuration(start-currentSec);
-          end = formatClock(Math.floor(start/3600), Math.floor((start%3600)/60), start%60);
-          break;
-        }
       }
     }
   }
@@ -151,7 +137,6 @@ function updateClock(){
   document.getElementById("current").textContent = current;
   document.getElementById("left").textContent = left;
   document.getElementById("end").textContent = end;
-  document.getElementById("break").textContent = breakLeft;
 }
 
 window.onload = function(){
