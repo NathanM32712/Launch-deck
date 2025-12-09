@@ -1,47 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Clock</title>
-  <link rel="icon" type="image/png" href="../icon.png" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" />
+  <title>Clock — Remake</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body { font-family: system-ui, sans-serif; margin: 2rem; color:#eee; background:#071018; }
-    h1 { margin-bottom: 1rem; }
-    h2 { margin: 0.5rem 0 0.2rem; color:#00aaff; }
-    .clock { font-size: 2rem; font-weight: bold; }
-    textarea { width:100%; height:120px; margin-top:1rem; font-family:monospace; }
-    button { margin-top:0.5rem; padding:6px 12px; border-radius:6px; cursor:pointer; }
-    footer { margin-top:2rem; font-size:14px; color:#7fbfdc; text-align:center; }
+    :root{
+      --bg:#071018;
+      --accent:#00aaff;
+      --muted:#7fbfdc;
+      --text:#eee;
+      --panel:#0b1b26;
+    }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+    .wrap{display:flex;gap:24px;padding:24px;box-sizing:border-box;height:100%;}
+    .left{flex:1;min-width:320px;max-width:900px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:18px;border-radius:10px;}
+    .right{width:320px;display:flex;flex-direction:column;align-items:center;gap:12px;}
+    h1{margin:0 0 8px 0;font-size:20px}
+    h2{margin:14px 0 6px 0;color:var(--accent);font-size:14px}
+    .clock{font-size:28px;font-weight:700;margin-bottom:6px}
+    .small{font-size:13px;color:var(--muted)}
+    textarea{width:100%;height:120px;background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--text);padding:8px;border-radius:6px;resize:vertical;font-family:monospace}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    button{background:var(--panel);border:1px solid rgba(255,255,255,0.04);color:var(--text);padding:8px 12px;border-radius:8px;cursor:pointer}
+    input[type="text"]{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text)}
+    footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
+    .panel{background:rgba(255,255,255,0.02);padding:12px;border-radius:8px}
+    canvas{background:transparent;border-radius:50%}
+    .row{display:flex;gap:12px;align-items:center}
+    .grow{flex:1}
+    .label{font-size:12px;color:var(--muted);margin-bottom:6px}
   </style>
 </head>
 <body>
-  <a href="../launch-deck.html" style="position: fixed; top: 12px; left: 12px; z-index: 100;">
-    <img src="../icon.png" alt="" style="height: 60px; background: black; border-radius: 4px;">
-  </a>
-  <h1>.</h1>
-  <h1>Clock</h1>
+  <div class="wrap">
+    <div class="left">
+      <a href="../launch-deck.html" style="position: fixed; top: 12px; left: 12px; z-index: 100;">
+        <img src="../icon.png" alt="" style="height: 60px; background: black; border-radius: 4px;">
+      </a>
 
-  <h2>Current</h2>
-  <div class="clock" id="current">--:--:--</div>
+      <h1>Clock</h1>
 
-  <h2>Current Time Left</h2>
-  <div class="clock" id="left">--:--:--</div>
+      <h2>Current</h2>
+      <div class="clock" id="current">--:--:--</div>
 
-  <h2>End</h2>
-  <div class="clock" id="end">--:--:--</div>
+      <h2>Current Time Left</h2>
+      <div class="clock" id="left">--:--:--</div>
 
-  <p>Enter schedule lines (<code>start/end</code> times like <code>8:00/8:58</code>, one per line):</p>
-  <textarea id="scheduleBox"></textarea><br/>
-  <button onclick="applySchedule()">Apply Schedule</button>
-  <button onclick="resetSchedule()">Reset Schedule</button>
+      <h2>End</h2>
+      <div class="clock" id="end">--:--:--</div>
 
-  <footer>
-    <p>Made by Nathan Marty</p>
-  </footer>
+      <h2>Schedule</h2>
+      <div class="panel">
+        <div class="small">Enter schedule lines (<code>start/end</code> like <code>08:00/08:58</code>), one per line.</div>
+        <textarea id="scheduleBox"></textarea>
+        <div class="controls">
+          <button id="applyScheduleBtn">Apply Schedule</button>
+          <button id="resetScheduleBtn">Reset Schedule</button>
+          <div class="small" style="align-self:center;margin-left:auto">Saved in cookie</div>
+        </div>
+      </div>
+
+      <h2>Stopwatch</h2>
+      <div class="panel">
+        <div class="clock" id="stopwatchDisplay">00:00:00</div>
+        <div class="row">
+          <button id="swStart">Start</button>
+          <button id="swPause">Pause</button>
+          <button id="swReset">Reset</button>
+          <div class="small" style="margin-left:auto">Persists in cookie</div>
+        </div>
+      </div>
+
+      <h2>Countdown Timer</h2>
+      <div class="panel">
+        <div class="label">Enter duration (HH:MM:SS or MM:SS)</div>
+        <div class="row">
+          <input id="timerInput" type="text" placeholder="05:00" />
+          <button id="timerSet">Set</button>
+        </div>
+        <div style="margin-top:10px">
+          <div class="clock" id="timerDisplay">--:--:--</div>
+          <div class="row">
+            <button id="tStart">Start</button>
+            <button id="tPause">Pause</button>
+            <button id="tReset">Reset</button>
+            <div class="small" style="margin-left:auto">Persists in cookie</div>
+          </div>
+        </div>
+      </div>
+
+      <footer>
+        <div>Made by Nathan Marty</div>
+      </footer>
+    </div>
+
+    <div class="right">
+      <h2>Analog Clock</h2>
+      <canvas id="analog" width="280" height="280"></canvas>
+      <div class="small">Analog + digital, because why not</div>
+    </div>
+  </div>
 
 <script>
-let periods = [];
+/* -------------------------
+   Cookie helpers
+   ------------------------- */
+function setCookie(name, value, days = 365) {
+  const d = new Date();
+  d.setTime(d.getTime() + (days*24*60*60*1000));
+  document.cookie = name + "=" + encodeURIComponent(value) + ";expires=" + d.toUTCString() + ";path=/";
+}
+function getCookie(name) {
+  const cname = name + "=";
+  const decoded = decodeURIComponent(document.cookie || "");
+  const parts = decoded.split(";");
+  for (let p of parts) {
+    p = p.trim();
+    if (p.indexOf(cname) === 0) return p.substring(cname.length);
+  }
+  return "";
+}
+
+/* -------------------------
+   Schedule parsing & UI
+   ------------------------- */
 const defaultSchedule = `08:00/08:58
 09:02/09:44
 09:48/10:30
@@ -50,106 +133,331 @@ const defaultSchedule = `08:00/08:58
 12:27/13:25
 13:29/14:27
 14:31/15:30
-15:30/32:00`;
+15:30/16:00`;
 
-function setCookie(name,value,days){
-  const d = new Date();
-  d.setTime(d.getTime()+(days*24*60*60*1000));
-  document.cookie = name+"="+encodeURIComponent(value)+";expires="+d.toUTCString()+";path=/";
-}
-function getCookie(name){
-  const cname = name+"=";
-  const decoded = decodeURIComponent(document.cookie);
-  const arr = decoded.split(";");
-  for(let c of arr){
-    c = c.trim();
-    if(c.indexOf(cname)===0) return c.substring(cname.length);
-  }
-  return "";
-}
+let periods = []; // array of [startSec,endSec] in seconds from midnight
 
-function toSeconds(t){
-  const [h,m] = t.split(":").map(Number);
-  return h*3600 + m*60;
+function toSeconds(t) {
+  // Accept H:MM or HH:MM
+  const parts = t.split(":").map(s => s.trim());
+  if (parts.length === 1) return parseInt(parts[0],10) * 3600;
+  const h = Number(parts[0]) || 0;
+  const m = Number(parts[1]) || 0;
+  const s = parts[2] ? Number(parts[2]) : 0;
+  return h*3600 + m*60 + s;
 }
+function pad(n, len=2){ return String(n).padStart(len,"0"); }
 function formatClock(h,m,s){
   let hrs = h;
-  let ampm = hrs >= 12 ? "PM" : "AM";
-  hrs = hrs % 12; if (hrs===0) hrs=12;
-  return `${hrs}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")} ${ampm}`;
+  const ampm = hrs >= 12 ? "PM" : "AM";
+  hrs = hrs % 12; if (hrs === 0) hrs = 12;
+  return `${hrs}:${pad(m)}:${pad(s)} ${ampm}`;
 }
 function formatDuration(sec){
-  if(sec<0) return "--:--:--";
-  const hrs = String(Math.floor(sec/3600)).padStart(2,"0");
-  const mins = String(Math.floor((sec%3600)/60)).padStart(2,"0");
-  const secs = String(sec%60).padStart(2,"0");
-  return `${hrs}:${mins}:${secs}`;
+  if (sec < 0) return "--:--:--";
+  const h = Math.floor(sec/3600);
+  const m = Math.floor((sec%3600)/60);
+  const s = sec % 60;
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
-function applySchedule(){
-  const text = document.getElementById("scheduleBox").value.trim();
-  setCookie("schedule", text, 365);
-  const lines = text.split(/\n+/);
+function applyScheduleFromText(text) {
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   periods = [];
   let lastEnd = null;
-
-  for(const line of lines){
+  for (const line of lines) {
     const parts = line.split("/");
-    if(parts.length===2){
-      try{
-        const start = toSeconds(parts[0].trim());
-        const end = toSeconds(parts[1].trim());
-
-        // insert break if gap exists
-        if(lastEnd!==null && start>lastEnd){
-          periods.push([lastEnd,start]); // break interval
-        }
-
-        periods.push([start,end]); // normal period
-        lastEnd = end;
-      }catch(e){}
+    if (parts.length !== 2) continue;
+    const start = toSeconds(parts[0]);
+    const end = toSeconds(parts[1]);
+    if (!isFinite(start) || !isFinite(end)) continue;
+    // if gap between lastEnd and start, add break interval
+    if (lastEnd !== null && start > lastEnd) {
+      periods.push([lastEnd, start]);
     }
+    periods.push([start, end]);
+    lastEnd = end;
   }
 }
-function resetSchedule(){
+
+document.getElementById("applyScheduleBtn").addEventListener("click", () => {
+  const txt = document.getElementById("scheduleBox").value.trim();
+  setCookie("schedule", txt, 365);
+  applyScheduleFromText(txt);
+});
+document.getElementById("resetScheduleBtn").addEventListener("click", () => {
   document.getElementById("scheduleBox").value = defaultSchedule;
-  applySchedule();
+  setCookie("schedule", defaultSchedule, 365);
+  applyScheduleFromText(defaultSchedule);
+});
+
+/* -------------------------
+   Stopwatch
+   ------------------------- */
+let swInterval = null;
+let swSeconds = Number(getCookie("stopwatch_seconds") || 0);
+let swRunning = (getCookie("stopwatch_running") === "1");
+
+function updateStopwatchDisplay(){
+  document.getElementById("stopwatchDisplay").textContent = formatDuration(swSeconds);
 }
+function swStart(){
+  if (swInterval) return;
+  swRunning = true;
+  setCookie("stopwatch_running", "1", 365);
+  swInterval = setInterval(() => {
+    swSeconds++;
+    setCookie("stopwatch_seconds", String(swSeconds), 365);
+    updateStopwatchDisplay();
+  }, 1000);
+}
+function swPause(){
+  if (swInterval) clearInterval(swInterval);
+  swInterval = null;
+  swRunning = false;
+  setCookie("stopwatch_running", "0", 365);
+}
+function swReset(){
+  swPause();
+  swSeconds = 0;
+  setCookie("stopwatch_seconds", "0", 365);
+  updateStopwatchDisplay();
+}
+document.getElementById("swStart").addEventListener("click", swStart);
+document.getElementById("swPause").addEventListener("click", swPause);
+document.getElementById("swReset").addEventListener("click", swReset);
 
-function updateClock(){
+/* -------------------------
+   Countdown Timer
+   ------------------------- */
+let timerInterval = null;
+let timerRemaining = null; // seconds remaining, null if not set
+let timerRunning = false;
+
+function parseDurationInput(str){
+  str = (str||"").trim();
+  if (!str) return 0;
+  const parts = str.split(":").map(Number).reverse();
+  // parts[0] = seconds or minutes if only one part
+  let s = 0;
+  if (parts.length >= 1) s += (parts[0] || 0);
+  if (parts.length >= 2) s += (parts[1] || 0) * 60;
+  if (parts.length >= 3) s += (parts[2] || 0) * 3600;
+  return s;
+}
+function setTimerFromInput(){
+  const val = document.getElementById("timerInput").value.trim();
+  const secs = parseDurationInput(val);
+  timerRemaining = secs;
+  timerRunning = false;
+  clearInterval(timerInterval); timerInterval = null;
+  saveTimerCookie();
+  updateTimerDisplay();
+}
+function updateTimerDisplay(){
+  document.getElementById("timerDisplay").textContent = timerRemaining === null ? "--:--:--" : formatDuration(timerRemaining);
+}
+function saveTimerCookie(){
+  const obj = { remaining: timerRemaining, running: timerRunning ? 1 : 0, updatedAt: Date.now() };
+  setCookie("timer_state", JSON.stringify(obj), 365);
+}
+function loadTimerCookie(){
+  const raw = getCookie("timer_state");
+  if (!raw) return;
+  try {
+    const obj = JSON.parse(raw);
+    timerRemaining = typeof obj.remaining === "number" ? obj.remaining : null;
+    timerRunning = obj.running === 1;
+    // If running, we don't try to compute elapsed across reloads (keeps it simple).
+  } catch(e){}
+}
+function tStart(){
+  if (timerRemaining === null || timerRemaining <= 0) return;
+  if (timerInterval) return;
+  timerRunning = true;
+  saveTimerCookie();
+  timerInterval = setInterval(() => {
+    if (timerRemaining > 0) {
+      timerRemaining--;
+      saveTimerCookie();
+      updateTimerDisplay();
+      if (timerRemaining <= 0) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        timerRunning = false;
+        saveTimerCookie();
+        // simple alert when done
+        try { new Audio?.('').play().catch(()=>{}); } catch(e){}
+        // flash title briefly
+        const old = document.title;
+        document.title = "TIMER DONE!";
+        setTimeout(()=>document.title = old, 2000);
+      }
+    }
+  }, 1000);
+}
+function tPause(){
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = null;
+  timerRunning = false;
+  saveTimerCookie();
+}
+function tReset(){
+  tPause();
+  timerRemaining = null;
+  saveTimerCookie();
+  updateTimerDisplay();
+}
+document.getElementById("timerSet").addEventListener("click", setTimerFromInput);
+document.getElementById("tStart").addEventListener("click", tStart);
+document.getElementById("tPause").addEventListener("click", tPause);
+document.getElementById("tReset").addEventListener("click", tReset);
+
+/* -------------------------
+   Analog + Digital clock update
+   ------------------------- */
+function updateMainClock(){
   const now = new Date();
-  const currentSec = now.getHours()*3600 + now.getMinutes()*60 + now.getSeconds();
-  const current = formatClock(now.getHours(), now.getMinutes(), now.getSeconds());
+  const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+  document.getElementById("current").textContent = formatClock(h,m,s);
 
-  let left="--:--:--", end="--:--:--";
-
-  if(periods.length>0){
-    for(let i=0;i<periods.length;i++){
+  // schedule left/end
+  const currentSec = h*3600 + m*60 + s;
+  let left = "--:--:--", end = "--:--:--";
+  if (periods.length > 0) {
+    for (let i=0;i<periods.length;i++){
       const [start,endSec] = periods[i];
-      if(currentSec>=start && currentSec<=endSec){
-        left = formatDuration(endSec-currentSec);
-
-        const endDate = new Date(now);
-        endDate.setHours(Math.floor(endSec/3600), Math.floor((endSec%3600)/60), endSec%60);
-        end = formatClock(endDate.getHours(), endDate.getMinutes(), endDate.getSeconds());
+      if (currentSec >= start && currentSec <= endSec) {
+        left = formatDuration(endSec - currentSec);
+        const endH = Math.floor(endSec/3600);
+        const endM = Math.floor((endSec%3600)/60);
+        const endS = endSec%60;
+        end = formatClock(endH,endM,endS);
         break;
       }
     }
   }
-
-  document.title = `${left}/${current}`;
-  document.getElementById("current").textContent = current;
   document.getElementById("left").textContent = left;
   document.getElementById("end").textContent = end;
+
+  // draw analog
+  drawAnalog(now);
 }
 
-window.onload = function(){
-  const saved = getCookie("schedule");
-  document.getElementById("scheduleBox").value = saved || defaultSchedule;
-  applySchedule();
-  setInterval(updateClock,1000);
-  updateClock();
-};
+/* -------------------------
+   Analog drawing
+   ------------------------- */
+const canvas = document.getElementById("analog");
+const ctx = canvas.getContext("2d");
+const R = canvas.width / 2;
+
+function drawAnalog(now) {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.save();
+  ctx.translate(R,R);
+
+  // face
+  ctx.beginPath();
+  ctx.arc(0,0,R-6,0,Math.PI*2);
+  ctx.fillStyle = "#071018";
+  ctx.fill();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = "#0eaaff";
+  ctx.stroke();
+
+  // ticks
+  for (let i=0;i<60;i++){
+    const ang = i * Math.PI/30;
+    const inner = (i%5===0) ? R-22 : R-16;
+    const outer = R-6;
+    ctx.beginPath();
+    ctx.moveTo(inner*Math.cos(ang), inner*Math.sin(ang));
+    ctx.lineTo(outer*Math.cos(ang), outer*Math.sin(ang));
+    ctx.strokeStyle = (i%5===0) ? "#0eaaff" : "rgba(14,170,255,0.35)";
+    ctx.lineWidth = (i%5===0) ? 3 : 1;
+    ctx.stroke();
+  }
+
+  // numbers
+  ctx.fillStyle = "#0eaaff";
+  ctx.font = "16px system-ui, Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  for (let n=1;n<=12;n++){
+    const ang = (n * Math.PI/6) - Math.PI/2;
+    const x = Math.cos(ang) * (R - 44);
+    const y = Math.sin(ang) * (R - 44);
+    ctx.fillText(String(n), x, y);
+  }
+
+  // hands
+  const hour = now.getHours() % 12;
+  const minute = now.getMinutes();
+  const second = now.getSeconds();
+
+  const hourAngle = ((hour + minute/60 + second/3600) * Math.PI/6) - Math.PI/2;
+  const minuteAngle = ((minute + second/60) * Math.PI/30) - Math.PI/2;
+  const secondAngle = (second * Math.PI/30) - Math.PI/2;
+
+  // hour
+  drawHand(ctx, hourAngle, R*0.45, 7, "#dbefff");
+  // minute
+  drawHand(ctx, minuteAngle, R*0.62, 5, "#bfeaff");
+  // second
+  drawHand(ctx, secondAngle, R*0.78, 2, "#00d0ff");
+
+  // center
+  ctx.beginPath();
+  ctx.arc(0,0,6,0,Math.PI*2);
+  ctx.fillStyle = "#00aaff";
+  ctx.fill();
+
+  ctx.restore();
+}
+function drawHand(ctx, angle, length, width, color="#fff"){
+  ctx.beginPath();
+  ctx.lineWidth = width;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = color;
+  ctx.moveTo(0,0);
+  ctx.lineTo(Math.cos(angle)*length, Math.sin(angle)*length);
+  ctx.stroke();
+}
+
+/* -------------------------
+   Initialization & intervals
+   ------------------------- */
+function init(){
+  // schedule load
+  const savedSchedule = getCookie("schedule");
+  document.getElementById("scheduleBox").value = savedSchedule || defaultSchedule;
+  applyScheduleFromText(savedSchedule || defaultSchedule);
+
+  // stopwatch init
+  updateStopwatchDisplay();
+  if (swRunning) swStart();
+
+  // timer init
+  loadTimerCookie();
+  updateTimerDisplay();
+  if (timerRunning) {
+    // if cookie said running, resume ticking
+    tStart();
+  }
+
+  // main clock tick
+  updateMainClock();
+  setInterval(updateMainClock, 1000);
+}
+window.addEventListener("load", init);
+
+// save state on unload
+window.addEventListener("beforeunload", () => {
+  // cookies already updated frequently; ensure running flags saved
+  setCookie("stopwatch_seconds", String(swSeconds), 365);
+  setCookie("stopwatch_running", swRunning ? "1" : "0", 365);
+  saveTimerCookie();
+});
 </script>
 </body>
 </html>
