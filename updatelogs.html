@@ -8,36 +8,53 @@
     body {
       font-family: Arial, sans-serif;
       margin: 40px;
-      background-color: #f9f9f9;
-      color: #333;
+      background-color: #000; /* Black background */
+      color: #00aaff; /* Blue text */
     }
     h1 {
       text-align: center;
       margin-bottom: 20px;
+      color: #00ccff;
     }
     .log-entry {
-      border-bottom: 1px solid #ddd;
+      border-bottom: 1px solid #00aaff;
       padding: 10px 0;
     }
     .date {
       font-weight: bold;
-      color: #555;
+      color: #66d9ff;
     }
     .description {
       margin-top: 5px;
+      color: #00aaff;
     }
     .empty {
       text-align: center;
-      color: #888;
+      color: #5555ff;
       font-style: italic;
       margin-top: 30px;
+    }
+    /* Back button styling */
+    .back-button {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+    }
+    .back-button img {
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      filter: drop-shadow(0 0 5px #00aaff);
     }
   </style>
 </head>
 <body>
-  <a href="launch-deck.html" style="position: fixed; top: 12px; left: 12px; z-index: 100;">
-    <img src="icon.png" alt="" style="height: 60px; background: black; border-radius: 4px;">
-  </a>
+  <!-- Back button -->
+  <div class="back-button">
+    <a href="launch-deck.html">
+      <img src="icon.png" alt="Back to Launch Deck">
+    </a>
+  </div>
 
   <h1>Updates Log</h1>
 
