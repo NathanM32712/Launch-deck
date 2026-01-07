@@ -1,1 +1,409 @@
-james loves black people
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Icon Clicker</title>
+<link rel="icon" href="../icon.png">
+<style>
+  :root{
+    --bg:#071022; --card:#0b1220; --accent:#7dd3fc; --muted:#94a3b8;
+    --glass: rgba(255,255,255,0.03);
+  }
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Arial;background:linear-gradient(180deg,#071022 0%, #071a2a 100%);color:#e6eef8;overflow-x:hidden;}
+  .wrap{max-width:1100px;margin:28px auto;padding:20px;display:grid;grid-template-columns:1fr;gap:20px;}
+  .panel{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 6px 18px rgba(2,6,23,0.6);position:relative;}
+  .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;}
+  .currency{font-size:20px;font-weight:700;color:var(--accent);}
+  .click-shop-row{display:flex;gap:18px;align-items:flex-start;}
+  .click-area{flex:0 0 360px;display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px;background:var(--glass);border-radius:10px;position:relative;}
+  .side-shop{flex:1;min-width:260px;max-height:640px;overflow:auto;padding:12px;background:rgba(255,255,255,0.02);border-radius:10px;}
+  .click-btn{width:220px;height:220px;border-radius:18px;background:#071a2a;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:inset 0 -6px 18px rgba(0,0,0,0.6);position:relative;overflow:visible;}
+  .click-btn img{width:140px;height:140px;user-select:none;pointer-events:none;transition:transform 120ms ease;}
+  .stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;}
+  .stat{background:rgba(255,255,255,0.02);padding:8px 10px;border-radius:8px;font-size:13px;color:var(--muted);}
+  .store-list{display:grid;gap:10px;}
+  .store-item{display:flex;align-items:center;justify-content:space-between;padding:10px;background:rgba(255,255,255,0.02);border-radius:8px;}
+  .store-item .meta{max-width:62%;}
+  .store-item button{background:var(--accent);border:none;padding:8px 10px;border-radius:8px;color:#042028;font-weight:700;cursor:pointer;}
+  .small{font-size:13px;color:var(--muted);}
+  .controls{display:flex;gap:8px;margin-top:12px;}
+  .controls button{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 10px;border-radius:8px;color:var(--muted);cursor:pointer;}
+  footer{margin-top:12px;text-align:center;color:var(--muted);font-size:13px;}
+  .flying-icon{position:fixed;width:36px;height:36px;pointer-events:none;will-change:transform,opacity;z-index:9999;transform-origin:center;}
+  .max-badge{display:inline-block;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,0.06);color:var(--muted);font-weight:700;}
+  @media(max-width:900px){
+    .click-shop-row{flex-direction:column;align-items:center;}
+    .click-area{width:100%;}
+    .side-shop{width:100%;max-height:360px;}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel" role="application" aria-label="Icon Clicker">
+      <div class="header">
+        <div>
+          <div style="font-size:18px;font-weight:800">Icon Clicker</div>
+          <div class="small">Click the icon to earn icons</div>
+        </div>
+        <div class="currency" id="currency">0</div>
+      </div>
+
+      <div class="click-shop-row">
+        <!-- Click area (single visible icon) -->
+        <div class="click-area" aria-label="Click area">
+          <div class="click-btn" id="clickBtn" title="Click me" role="button" aria-pressed="false">
+            <img src="../icon.png" alt="icon" id="clickImg">
+          </div>
+
+          <div class="stats" id="stats" aria-live="polite">
+            <div class="stat">Per Click: <span id="perClick">1</span></div>
+            <div class="stat">Icons / sec: <span id="cps">0</span></div>
+            <div class="stat">Multiplier: <span id="mult">1×</span></div>
+            <div class="stat">Crit Chance: <span id="critChance">0%</span></div>
+          </div>
+
+          <div class="small" style="text-align:center;color:var(--muted);max-width:320px">Tip: Every click spawns one flying icon that falls with gravity.</div>
+
+          <div class="controls">
+            <button id="saveBtn">Save</button>
+            <button id="resetBtn">Soft Reset</button>
+            <button id="hardResetBtn">Hard Reset</button>
+          </div>
+        </div>
+
+        <!-- Side shop -->
+        <aside class="side-shop" id="sideShop" aria-label="Shop">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-weight:800">Shop</div>
+            <div class="small">Buy upgrades</div>
+          </div>
+          <div class="store-list" id="store" role="list"></div>
+
+          <hr style="border:none;border-top:1px solid rgba(255,255,255,0.03);margin:12px 0">
+
+          <div style="display:flex;gap:12px;align-items:center;justify-content:space-between">
+            <div>
+              <div class="small">Total clicks: <span id="totalClicks">0</span></div>
+              <div class="small">Prestige tokens: <span id="prestigeCount">0</span></div>
+            </div>
+            <div>
+              <button id="prestigeBtn" style="background:#ffb86b;border:none;padding:8px 10px;border-radius:8px;cursor:pointer">Prestige</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <footer class="small">All icons use <code>../icon.png</code>. Discounts are capped; other upgrades remain limitless.</footer>
+  </div>
+
+<script>
+/* ======= State ======= */
+const state = {
+  icons: 0,
+  perClickBase: 1,
+  multiplier: 1,
+  critChance: 0,
+  critMultiplier: 2,
+  cps: 0,
+  totalClicks: 0,
+  prestigeTokens: 0,
+  store: {},
+  priceScale: 1.0,
+  lastTick: Date.now()
+};
+
+/* ======= Formatting rule
+   Scientific notation only when integer part length > 20 digits.
+   - If integer part length > 20 -> scientific (3 significant digits).
+   - Otherwise show integer with commas or percent formatting for crit chance.
+*/
+function integerPartLength(n){
+  if(!isFinite(n)) return Infinity;
+  const abs = Math.abs(n);
+  if(!isFinite(abs)) return Infinity;
+  // For very large numbers beyond JS precision, convert via toFixed if possible.
+  // Use floor for integer part.
+  const intPart = Math.floor(abs).toString();
+  return intPart.length;
+}
+
+function formatConditional(n){
+  if(!isFinite(n)) return String(n);
+  const len = integerPartLength(n);
+  if(len > 20){
+    return Number(n).toExponential(3).replace('+','');
+  }
+  if(Math.abs(n) >= 1){
+    return Math.floor(n).toLocaleString();
+  }
+  // small fractions: show up to 6 significant digits, trim trailing zeros
+  return Number(n).toPrecision(6).replace(/\.?0+$/,'');
+}
+
+/* ======= Helpers ======= */
+function getUpgradeCount(id){ return state.store[id] || 0; }
+function getCost(upg){
+  const count = getUpgradeCount(upg.id);
+  const growth = Math.pow(1.15, count) * Math.pow(1.12, count);
+  const base = upg.baseCost * state.priceScale;
+  return Math.ceil(base * growth);
+}
+function applyDiscountFactor(factor){
+  state.priceScale *= factor;
+  state.priceScale = Math.max(0.6, state.priceScale);
+}
+
+/* ======= Upgrades ======= */
+const UPGRADES = [
+  { id:'finger', name:'Finger Strength', baseCost:15, type:'click', desc:'+1 icon per click', max:null, effect:(u,n)=>{ state.perClickBase += 1; } },
+  { id:'glove', name:'Precision Glove', baseCost:100, type:'click', desc:'+5 icons per click', max:null, effect:(u,n)=>{ state.perClickBase += 5; } },
+  { id:'megafinger', name:'Mega Finger', baseCost:600, type:'click', desc:'+20 icons per click', max:null, effect:(u,n)=>{ state.perClickBase += 20; } },
+  { id:'hyperclick', name:'Hyper Click Reactor', baseCost:25000, type:'click', desc:'+500 icons per click', max:null, effect:(u,n)=>{ state.perClickBase += 500; } },
+  { id:'quantum', name:'Quantum Clicker', baseCost:4500, type:'click', desc:'Each click has 10% chance to double', max:null, effect:(u,n)=>{} },
+
+  { id:'helper', name:'Auto Helper', baseCost:250, type:'cps', desc:'+1 icons/sec', max:null, effect:(u,n)=>{ state.cps += 1; } },
+  { id:'factory', name:'Factory', baseCost:1200, type:'cps', desc:'+10 icons/sec', max:null, effect:(u,n)=>{ state.cps += 10; } },
+  { id:'admanager', name:'Ad Manager', baseCost:3200, type:'cps', desc:'+50 icons/sec', max:null, effect:(u,n)=>{ state.cps += 50; } },
+  { id:'megaplant', name:'Mega Plant', baseCost:90000, type:'cps', desc:'+500 icons/sec', max:null, effect:(u,n)=>{ state.cps += 500; } },
+
+  { id:'chip', name:'Multiplier Chip', baseCost:800, type:'mult', desc:'+25% global multiplier', max:null, effect:(u,n)=>{ state.multiplier *= 1.25; } },
+  { id:'golden', name:'Golden Icon', baseCost:15000, type:'mult', desc:'+100% global multiplier', max:null, effect:(u,n)=>{ state.multiplier *= 2; } },
+  { id:'supercore', name:'Super Multiplier Core', baseCost:250000, type:'mult', desc:'+300% global multiplier', max:null, effect:(u,n)=>{ state.multiplier *= 4; } },
+
+  { id:'charm', name:'Lucky Charm', baseCost:500, type:'crit', desc:'+10% crit chance', max:null, effect:(u,n)=>{ state.critChance += 0.10; } },
+  { id:'crittrain', name:'Critical Training', baseCost:2200, type:'crit', desc:'+50% crit damage', max:null, effect:(u,n)=>{ state.critMultiplier *= 1.5; } },
+  { id:'critcore', name:'Critical Core', baseCost:80000, type:'crit', desc:'+200% crit damage', max:null, effect:(u,n)=>{ state.critMultiplier *= 3; } },
+
+  { id:'discount', name:'Bulk Discount', baseCost:4000, type:'economy', desc:'-10% base price (max 5)', max:5, effect:(u,n)=>{ applyDiscountFactor(0.90); } },
+  { id:'research', name:'Research Lab', baseCost:9000, type:'economy', desc:'-5% base price (max 6)', max:6, effect:(u,n)=>{ applyDiscountFactor(0.95); } },
+
+  { id:'vault', name:'Icon Vault', baseCost:10000, type:'passive', desc:'+2% of total icons per minute', max:null, effect:(u,n)=>{} },
+  { id:'timewarp', name:'Time Warp', baseCost:30000, type:'passive', desc:'+5% of total icons per minute', max:null, effect:(u,n)=>{} },
+  { id:'singularity', name:'Icon Singularity', baseCost:500000, type:'passive', desc:'+20% of total icons per minute', max:null, effect:(u,n)=>{} },
+
+  { id:'prestige', name:'Prestige Token', baseCost:50000, type:'prestige', desc:'Reset for +5% click power per token', max:null, effect:(u,n)=>{ state.prestigeTokens += 1; state.perClickBase *= 1.05; } }
+];
+
+/* ======= UI elements ======= */
+const currencyEl = document.getElementById('currency');
+const perClickEl = document.getElementById('perClick');
+const cpsEl = document.getElementById('cps');
+const multEl = document.getElementById('mult');
+const critEl = document.getElementById('critChance');
+const storeEl = document.getElementById('store');
+const totalClicksEl = document.getElementById('totalClicks');
+const prestigeCountEl = document.getElementById('prestigeCount');
+
+function renderStore(){
+  storeEl.innerHTML = '';
+  UPGRADES.forEach(u=>{
+    const cost = getCost(u);
+    const count = getUpgradeCount(u.id);
+    const isMax = (u.max !== null && count >= u.max);
+    const item = document.createElement('div');
+    item.className = 'store-item';
+    if(isMax){
+      item.innerHTML = `
+        <div class="meta">
+          <div style="font-weight:700">${u.name} <span class="small">${formatConditional(count)}</span></div>
+          <div class="small">${u.desc}</div>
+        </div>
+        <div style="text-align:right"><div style="margin-bottom:6px"><span class="max-badge">MAX</span></div></div>
+      `;
+    } else {
+      item.innerHTML = `
+        <div class="meta">
+          <div style="font-weight:700">${u.name} <span class="small">${formatConditional(count)}</span></div>
+          <div class="small">${u.desc}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="margin-bottom:6px;font-weight:700">${formatConditional(cost)}</div>
+          <button data-id="${u.id}">Buy</button>
+        </div>
+      `;
+    }
+    const btn = item.querySelector('button');
+    if(btn){
+      btn.disabled = state.icons < cost;
+      btn.addEventListener('click', ()=> buyUpgrade(u.id));
+    }
+    storeEl.appendChild(item);
+  });
+}
+
+function renderStats(){
+  currencyEl.textContent = formatConditional(state.icons);
+  perClickEl.textContent = formatConditional(state.perClickBase * state.multiplier);
+  cpsEl.textContent = formatConditional(state.cps * state.multiplier);
+  const multFormatted = formatConditional(state.multiplier);
+  multEl.textContent = multFormatted + '×';
+  const critPercent = state.critChance * 100;
+  critEl.textContent = formatConditional(critPercent) + '%';
+  totalClicksEl.textContent = formatConditional(state.totalClicks);
+  prestigeCountEl.textContent = formatConditional(state.prestigeTokens);
+}
+
+/* ======= Game actions ======= */
+function clickIcon(clientX, clientY){
+  let base = state.perClickBase;
+  const quantumCount = getUpgradeCount('quantum');
+  if(quantumCount > 0 && Math.random() < 0.10 * quantumCount){
+    base *= 2;
+    flash('+Quantum!');
+  }
+  let value = base * state.multiplier;
+  if(Math.random() < state.critChance){
+    value *= state.critMultiplier;
+    flash('+CRIT ' + Math.floor(value));
+  }
+  state.icons += value;
+  state.totalClicks += 1;
+  renderStats();
+  spawnFlyingIcon(clientX, clientY);
+}
+
+function buyUpgrade(id){
+  const upg = UPGRADES.find(u=>u.id===id);
+  if(!upg) return;
+  const cost = getCost(upg);
+  if(state.icons < cost) return;
+  const count = getUpgradeCount(id);
+  if(upg.max !== null && count >= upg.max) return;
+  state.icons -= cost;
+  state.store[id] = count + 1;
+  upg.effect(upg, state.store[id]);
+  renderStore();
+  renderStats();
+  saveGame();
+}
+
+/* ======= Tick / Passive income ======= */
+function tick(){
+  const now = Date.now();
+  const dt = (now - state.lastTick) / 1000;
+  state.lastTick = now;
+  state.icons += state.cps * state.multiplier * dt;
+  const vaultCount = getUpgradeCount('vault');
+  if(vaultCount > 0) state.icons += state.icons * (0.02 * vaultCount) * dt / 60;
+  const warpCount = getUpgradeCount('timewarp');
+  if(warpCount > 0) state.icons += state.icons * (0.05 * warpCount) * dt / 60;
+  const singCount = getUpgradeCount('singularity');
+  if(singCount > 0) state.icons += state.icons * (0.20 * singCount) * dt / 60;
+  renderStats();
+  renderStore();
+}
+
+/* ======= Save / Load / Reset ======= */
+function saveGame(){
+  const toSave = {
+    icons: state.icons, perClickBase: state.perClickBase, multiplier: state.multiplier,
+    critChance: state.critChance, critMultiplier: state.critMultiplier, cps: state.cps,
+    totalClicks: state.totalClicks, prestigeTokens: state.prestigeTokens, store: state.store,
+    priceScale: state.priceScale, lastTick: Date.now()
+  };
+  localStorage.setItem('iconClickerSave', JSON.stringify(toSave));
+}
+function loadGame(){
+  const raw = localStorage.getItem('iconClickerSave');
+  if(!raw) return;
+  try{
+    const s = JSON.parse(raw);
+    state.icons = (typeof s.icons === 'number') ? s.icons : state.icons;
+    state.perClickBase = (typeof s.perClickBase === 'number') ? s.perClickBase : state.perClickBase;
+    state.multiplier = (typeof s.multiplier === 'number') ? s.multiplier : state.multiplier;
+    state.critChance = (typeof s.critChance === 'number') ? s.critChance : state.critChance;
+    state.critMultiplier = (typeof s.critMultiplier === 'number') ? s.critMultiplier : state.critMultiplier;
+    state.cps = (typeof s.cps === 'number') ? s.cps : state.cps;
+    state.totalClicks = (typeof s.totalClicks === 'number') ? s.totalClicks : state.totalClicks;
+    state.prestigeTokens = (typeof s.prestigeTokens === 'number') ? s.prestigeTokens : state.prestigeTokens;
+    state.store = s.store || {};
+    state.priceScale = (typeof s.priceScale === 'number') ? s.priceScale : state.priceScale;
+  }catch(e){ console.warn('Failed to load save', e); }
+}
+function softReset(){
+  const tokens = state.prestigeTokens;
+  Object.assign(state, { icons:0, perClickBase:1 + tokens*0.05, multiplier:1, critChance:0, critMultiplier:2, cps:0, totalClicks:0, prestigeTokens: tokens, store:{}, priceScale:1.0, lastTick: Date.now() });
+  renderStore(); renderStats(); saveGame();
+}
+function hardReset(){ localStorage.removeItem('iconClickerSave'); Object.assign(state, { icons:0, perClickBase:1, multiplier:1, critChance:0, critMultiplier:2, cps:0, totalClicks:0, prestigeTokens:0, store:{}, priceScale:1.0, lastTick: Date.now() }); renderStore(); renderStats(); }
+
+/* ======= Prestige ======= */
+function prestige(){
+  const threshold = 50000;
+  if(state.icons < threshold){ alert('You need at least ' + formatConditional(threshold) + ' icons to prestige.'); return; }
+  const gained = Math.floor(state.icons / threshold);
+  if(!confirm('Prestige will reset most progress and grant ' + formatConditional(gained) + ' token(s). Proceed?')) return;
+  state.prestigeTokens += gained;
+  Object.assign(state, { icons:0, perClickBase:1 + state.prestigeTokens*0.05, multiplier:1, critChance:0, critMultiplier:2, cps:0, totalClicks:0, store:{}, priceScale:1.0, lastTick: Date.now(), prestigeTokens: state.prestigeTokens });
+  renderStore(); renderStats(); saveGame();
+}
+
+/* ======= Visual feedback ======= */
+function flash(text){
+  const el = document.createElement('div');
+  el.textContent = text;
+  el.style.position = 'fixed'; el.style.left = '50%'; el.style.top = '20%'; el.style.transform = 'translateX(-50%)';
+  el.style.padding = '8px 12px'; el.style.background = 'linear-gradient(90deg,#ffecd2,#fcb69f)'; el.style.color = '#042028';
+  el.style.borderRadius = '8px'; el.style.fontWeight = '700'; el.style.zIndex = 9999;
+  document.body.appendChild(el);
+  setTimeout(()=> el.style.opacity = '0', 700); setTimeout(()=> el.remove(), 1200);
+}
+
+/* ======= Flying icon physics ======= */
+function spawnFlyingIcon(clientX, clientY){
+  const img = document.createElement('img');
+  img.src = '../icon.png';
+  img.className = 'flying-icon';
+  document.body.appendChild(img);
+
+  const btn = document.getElementById('clickBtn');
+  const rect = btn.getBoundingClientRect();
+  const startX = (typeof clientX === 'number') ? clientX - 18 : rect.left + rect.width/2 - 18;
+  const startY = (typeof clientY === 'number') ? clientY - 18 : rect.top + rect.height/2 - 18;
+
+  let x = startX, y = startY;
+  const vx = (Math.random() * 200 - 100) / 60;
+  const vy = (Math.random() * -220 - 80) / 60;
+  let rotation = (Math.random() * 360);
+  const vr = (Math.random() * 8 - 4);
+  let alpha = 1;
+
+  img.style.left = x + 'px'; img.style.top = y + 'px'; img.style.opacity = alpha; img.style.transform = `rotate(${rotation}deg)`;
+
+  const gravity = 0.6, friction = 0.995;
+  let frameVx = vx, frameVy = vy;
+  let alive = true;
+  function step(){
+    if(!alive) return;
+    frameVy += gravity;
+    x += frameVx; y += frameVy;
+    frameVx *= friction; rotation += vr; alpha -= 0.01;
+    img.style.left = x + 'px'; img.style.top = y + 'px'; img.style.transform = `rotate(${rotation}deg)`; img.style.opacity = Math.max(0, alpha);
+    if(alpha <= 0 || y > window.innerHeight + 100 || x < -200 || x > window.innerWidth + 200){ alive = false; img.remove(); return; }
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ======= Events ======= */
+document.getElementById('clickBtn').addEventListener('click', (e)=>{
+  const rect = e.currentTarget.getBoundingClientRect();
+  const cx = e.clientX || (rect.left + rect.width/2);
+  const cy = e.clientY || (rect.top + rect.height/2);
+  clickIcon(cx, cy);
+  const img = document.getElementById('clickImg'); img.style.transform = 'scale(0.92)'; setTimeout(()=> img.style.transform = '', 120);
+});
+document.getElementById('saveBtn').addEventListener('click', saveGame);
+document.getElementById('resetBtn').addEventListener('click', ()=>{ if(confirm('Soft reset?')) softReset(); });
+document.getElementById('hardResetBtn').addEventListener('click', ()=>{ if(confirm('Hard reset?')) hardReset(); });
+document.getElementById('prestigeBtn').addEventListener('click', prestige);
+document.addEventListener('click', (e)=>{ const btn = e.target.closest('button[data-id]'); if(btn){ const id = btn.getAttribute('data-id'); buyUpgrade(id); } });
+
+/* ======= Init ======= */
+loadGame(); renderStore(); renderStats(); state.lastTick = Date.now(); setInterval(tick, 1000); setInterval(saveGame, 15000);
+</script>
+</body>
+</html>
