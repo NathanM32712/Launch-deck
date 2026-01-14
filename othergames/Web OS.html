@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Web OS Demo</title>
+<style>
+  :root{
+    --bg:#0f1720; --panel:#0b1220; --accent:#4caf50; --muted:#9aa6b2;
+    --icon-size:100px;
+  }
+  html,body{height:100%;margin:0;font-family:Inter,Segoe UI,system-ui,Arial;background:var(--bg);color:#e6eef6;overflow:hidden}
+  /* Desktop */
+  #desktop{
+    position:relative;
+    width:100vw;height:100vh;
+    background:linear-gradient(180deg,#071021 0%, #0f1720 100%);
+    background-size:cover;
+    padding:18px;
+    box-sizing:border-box;
+    display:flex;flex-wrap:wrap;align-content:flex-start;gap:18px;
+  }
+  /* Icons */
+  .icon{
+    width:var(--icon-size);height:var(--icon-size);
+    background:rgba(255,255,255,0.03);border-radius:12px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:8px;cursor:pointer;user-select:none;
+    box-shadow:0 4px 10px rgba(2,6,23,0.6);
+  }
+  .icon img{width:48px;height:48px;object-fit:contain;margin-bottom:6px}
+  .icon .label{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%}
+  /* Context menu */
+  #contextMenu{position:absolute;display:none;background:#0b1220;border:1px solid rgba(255,255,255,0.04);padding:8px;border-radius:8px;z-index:2000;min-width:180px}
+  #contextMenu div{padding:8px;border-radius:6px;cursor:pointer;color:#dbe9ff}
+  #contextMenu div:hover{background:rgba(255,255,255,0.03)}
+  hr{border:none;border-top:1px solid rgba(255,255,255,0.03);margin:6px 0}
+  /* Dialog */
+  .dialog{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:#071021;padding:16px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);z-index:3000;display:none}
+  .dialog input, .dialog select, .dialog textarea{width:320px;padding:8px;margin-top:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:#071021;color:#e6eef6}
+  .dialog button{margin-top:10px;padding:8px 12px;border-radius:6px;border:none;background:var(--accent);color:#041014;cursor:pointer}
+  /* Taskbar / top tabs */
+  #topbar{position:fixed;left:0;right:0;top:0;height:44px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);display:flex;align-items:center;padding:6px 12px;gap:12px;z-index:1500}
+  #tabs{display:flex;gap:6px;flex:1;align-items:center}
+  .tab{background:rgba(255,255,255,0.02);padding:6px 10px;border-radius:8px;cursor:pointer;color:var(--muted);display:flex;gap:8px;align-items:center}
+  .tab.active{background:linear-gradient(90deg, rgba(76,175,80,0.12), rgba(76,175,80,0.06));color:#dfffe6}
+  #shelf{display:flex;gap:8px;align-items:center}
+  #clock{color:var(--muted);font-size:13px;padding:6px 10px;border-radius:8px}
+  /* Window manager */
+  .win{
+    position:absolute;background:#071021;border:1px solid rgba(255,255,255,0.04);border-radius:8px;box-shadow:0 10px 30px rgba(2,6,23,0.7);overflow:hidden;display:flex;flex-direction:column;z-index:1000;
+  }
+  .titlebar{height:36px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);display:flex;align-items:center;padding:0 8px;gap:8px;cursor:grab}
+  .titlebar .title{flex:1;color:#dbe9ff;font-size:13px}
+  .titlebar .controls{display:flex;gap:6px}
+  .btn{width:28px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted)}
+  .content{flex:1;background:#071021;display:flex;flex-direction:column}
+  iframe.appframe{width:100%;height:100%;border:none;background:white}
+  /* resizer */
+  .resizer{position:absolute;width:12px;height:12px;right:2px;bottom:2px;cursor:se-resize;border-radius:3px}
+  /* terminal */
+  #terminal{background:#02060a;color:#9fffbf;padding:10px;font-family:monospace;height:300px;overflow:auto}
+  .inputline{display:flex;gap:8px;margin-top:8px}
+  .inputline input{flex:1;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.04);background:#071021;color:#e6eef6}
+  /* small helpers */
+  .hidden{display:none}
+</style>
+</head>
+<body>
+  <div id="topbar">
+    <div id="tabs"></div>
+    <div id="shelf">
+      <div id="launcher" class="tab" title="Launcher">Launcher</div>
+      <div id="clock">--:--</div>
+    </div>
+  </div>
+
+  <div id="desktop" oncontextmenu="showMenu(event)"></div>
+
+  <!-- Context menu -->
+  <div id="contextMenu">
+    <div onclick="createNew('txt')">New Text File</div>
+    <div onclick="createNew('link')">New Shortcut</div>
+    <div onclick="uploadFile()">Upload File</div>
+    <hr>
+    <div onclick="setIconSize('small')">Small Icons</div>
+    <div onclick="setIconSize('medium')">Medium Icons</div>
+    <div onclick="setIconSize('large')">Large Icons</div>
+    <hr>
+    <div onclick="openSettings()">Settings</div>
+  </div>
+
+  <!-- New shortcut dialog -->
+  <div id="shortcutDialog" class="dialog">
+    <h3 style="margin:0;color:#dbe9ff">Create Shortcut</h3>
+    <input id="shortcutURL" placeholder="https://example.com" />
+    <input id="shortcutName" placeholder="Name (optional)" />
+    <button onclick="createShortcutFromDialog()">Add</button>
+  </div>
+
+  <!-- Text editor dialog -->
+  <div id="editorDialog" class="dialog">
+    <h3 style="margin:0;color:#dbe9ff">Text Editor</h3>
+    <input id="editorName" placeholder="filename.txt" />
+    <textarea id="editorArea" rows="12" style="width:320px;margin-top:8px"></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="saveTextFile()">Save</button>
+      <button onclick="closeEditor()">Close</button>
+    </div>
+  </div>
+
+  <!-- Terminal dialog -->
+  <div id="terminalDialog" class="dialog" style="width:640px">
+    <h3 style="margin:0;color:#dbe9ff">Terminal</h3>
+    <div id="terminal"></div>
+    <div class="inputline">
+      <input id="termInput" placeholder="Type a command. Try help" onkeydown="if(event.key==='Enter') runCmd()" />
+      <button onclick="runCmd()">Run</button>
+    </div>
+  </div>
+
+<script>
+/* -------------------------
+   Virtual filesystem and state
+   ------------------------- */
+const STORAGE_KEY = 'webos_state_v1';
+let state = {
+  icons: [
+    {id:genId(),type:'link',name:'Web OS Demo',url:location.href,icon:''},
+    {id:genId(),type:'link',name:'MDN',url:'https://developer.mozilla.org',icon:''},
+    {id:genId(),type:'txt',name:'welcome.txt',content:'Welcome to Web OS demo! Double click icons to open.'}
+  ],
+  windows: [], // {id,app,type,props}
+  wallpaper: '',
+  iconSize: 'large'
+};
+loadState();
+
+function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+function loadState(){const s=localStorage.getItem(STORAGE_KEY); if(s) state=JSON.parse(s)}
+function genId(){return 'id'+Math.random().toString(36).slice(2,9)}
+
+/* -------------------------
+   Desktop rendering
+   ------------------------- */
+const desktop = document.getElementById('desktop');
+function renderDesktop(){
+  desktop.innerHTML='';
+  state.icons.forEach(ic=>{
+    const el = document.createElement('div');
+    el.className='icon';
+    el.dataset.id=ic.id;
+    el.ondblclick = ()=>openIcon(ic);
+    el.oncontextmenu = (e)=>{e.stopPropagation(); showIconMenu(e,ic)};
+    const img = document.createElement('img');
+    img.src = ic.icon || (ic.type==='txt' ? 'data:image/svg+xml;utf8,'+encodeURIComponent(svgIcon('TXT')) : 'data:image/svg+xml;utf8,'+encodeURIComponent(svgIcon('URL')));
+    el.appendChild(img);
+    const lbl = document.createElement('div'); lbl.className='label'; lbl.textContent = ic.name;
+    el.appendChild(lbl);
+    desktop.appendChild(el);
+  });
+  applyIconSize();
+}
+function svgIcon(text){ return `<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect rx='10' width='100%' height='100%' fill='#0b1220'/><text x='50%' y='55%' font-size='18' fill='#9aa6b2' text-anchor='middle' font-family='sans-serif'>${text}</text></svg>`}
+
+/* -------------------------
+   Context menus and dialogs
+   ------------------------- */
+const contextMenu = document.getElementById('contextMenu');
+function showMenu(e){
+  e.preventDefault();
+  contextMenu.style.left = e.pageX + 'px';
+  contextMenu.style.top = e.pageY + 'px';
+  contextMenu.style.display = 'block';
+}
+document.addEventListener('click', ()=> contextMenu.style.display='none');
+
+function showIconMenu(e,icon){
+  contextMenu.style.display='none';
+  const menu = document.createElement('div');
+  menu.style.position='absolute'; menu.style.left=e.pageX+'px'; menu.style.top=e.pageY+'px';
+  menu.style.background='#071021'; menu.style.padding='8px'; menu.style.border='1px solid rgba(255,255,255,0.04)'; menu.style.borderRadius='8px'; menu.style.zIndex=4000;
+  const actions = [
+    {t:'Open',fn:()=>openIcon(icon)},
+    {t:'Rename',fn:()=>renameIcon(icon)},
+    {t:'Delete',fn:()=>deleteIcon(icon)},
+    {t:'Properties',fn:()=>alert(JSON.stringify(icon, null, 2))}
+  ];
+  actions.forEach(a=>{
+    const d=document.createElement('div'); d.textContent=a.t; d.style.padding='6px'; d.style.cursor='pointer'; d.style.color='#dbe9ff';
+    d.onclick=()=>{a.fn(); document.body.removeChild(menu)};
+    menu.appendChild(d);
+  });
+  document.body.appendChild(menu);
+  document.addEventListener('click', function rm(){ if(menu.parentNode) document.body.removeChild(menu); document.removeEventListener('click',rm) }, {once:true});
+}
+
+/* -------------------------
+   Icon actions
+   ------------------------- */
+function openIcon(icon){
+  if(icon.type==='link') openAppWindow({title:icon.name,url:icon.url,appType:'iframe'});
+  if(icon.type==='txt') openTextEditor(icon);
+  if(icon.type==='img') openAppWindow({title:icon.name,url:icon.url,appType:'iframe'});
+}
+function renameIcon(icon){
+  const newName = prompt('Rename', icon.name);
+  if(newName){ icon.name=newName; saveState(); renderDesktop() }
+}
+function deleteIcon(icon){
+  if(!confirm('Delete '+icon.name+'?')) return;
+  state.icons = state.icons.filter(i=>i.id!==icon.id); saveState(); renderDesktop();
+}
+
+/* -------------------------
+   New shortcut and upload
+   ------------------------- */
+function createNew(type){
+  contextMenu.style.display='none';
+  if(type==='txt') {
+    const id=genId(); state.icons.push({id,type:'txt',name:'untitled.txt',content:''}); saveState(); renderDesktop();
+  } else openNewShortcut();
+}
+function openNewShortcut(){ document.getElementById('shortcutDialog').style.display='block' }
+function createShortcutFromDialog(){
+  const url = document.getElementById('shortcutURL').value.trim();
+  const name = document.getElementById('shortcutName').value.trim() || url.replace(/^https?:\/\//,'').split('/')[0];
+  if(!url) return alert('Enter a URL');
+  state.icons.push({id:genId(),type:'link',name, url, icon:''});
+  saveState(); renderDesktop();
+  document.getElementById('shortcutDialog').style.display='none';
+}
+function uploadFile(){
+  const inp = document.createElement('input'); inp.type='file';
+  inp.onchange = async ()=> {
+    const f = inp.files[0]; if(!f) return;
+    const reader = new FileReader();
+    reader.onload = ()=> {
+      const data = reader.result;
+      const type = f.type.startsWith('image/') ? 'img' : 'txt';
+      const name = f.name;
+      const icon = '';
+      if(type==='img') state.icons.push({id:genId(),type:'img',name, url:data, icon});
+      else {
+        state.icons.push({id:genId(),type:'txt',name,content:data});
+      }
+      saveState(); renderDesktop();
+    };
+    reader.readAsDataURL(f);
+  };
+  inp.click();
+}
+
+/* -------------------------
+   Icon size
+   ------------------------- */
+function setIconSize(size){
+  state.iconSize = size;
+  applyIconSize();
+  saveState();
+}
+function applyIconSize(){
+  const map = {small:'60px',medium:'80px',large:'100px'};
+  document.documentElement.style.setProperty('--icon-size', map[state.iconSize] || '100px');
+}
+
+/* -------------------------
+   Window manager
+   ------------------------- */
+const tabsEl = document.getElementById('tabs');
+let zCounter = 1000;
+function openAppWindow({title,url,appType='iframe',content=''}) {
+  const winId = genId();
+  const win = document.createElement('div'); win.className='win'; win.style.width='800px'; win.style.height='520px';
+  win.style.left = (50 + Math.random()*200)+'px'; win.style.top = (80 + Math.random()*120)+'px';
+  win.dataset.id = winId; win.style.zIndex = ++zCounter;
+  // titlebar
+  const titlebar = document.createElement('div'); titlebar.className='titlebar';
+  const tspan = document.createElement('div'); tspan.className='title'; tspan.textContent = title;
+  const controls = document.createElement('div'); controls.className='controls';
+  const btnMin = document.createElement('div'); btnMin.className='btn'; btnMin.textContent='—';
+  const btnMax = document.createElement('div'); btnMax.className='btn'; btnMax.textContent='▢';
+  const btnClose = document.createElement('div'); btnClose.className='btn'; btnClose.textContent='✕';
+  controls.appendChild(btnMin); controls.appendChild(btnMax); controls.appendChild(btnClose);
+  titlebar.appendChild(tspan); titlebar.appendChild(controls);
+  win.appendChild(titlebar);
+  // content
+  const contentEl = document.createElement('div'); contentEl.className='content';
+  if(appType==='iframe'){
+    const frame = document.createElement('iframe'); frame.className='appframe'; frame.src = url;
+    contentEl.appendChild(frame);
+  } else if(appType==='text'){
+    const pre = document.createElement('div'); pre.style.padding='12px'; pre.style.whiteSpace='pre-wrap'; pre.textContent = content;
+    contentEl.appendChild(pre);
+  }
+  win.appendChild(contentEl);
+  // resizer
+  const res = document.createElement('div'); res.className='resizer';
+  win.appendChild(res);
+  document.body.appendChild(win);
+
+  // tab
+  const tab = document.createElement('div'); tab.className='tab'; tab.dataset.win=winId; tab.textContent = title;
+  tab.onclick = ()=>activateWindow(winId);
+  tabsEl.appendChild(tab);
+  updateTabs();
+
+  // events
+  titlebar.onmousedown = (e)=>{ dragStart(e,win) };
+  btnClose.onclick = ()=>{ closeWindow(winId) };
+  btnMin.onclick = ()=>{ minimizeWindow(winId) };
+  btnMax.onclick = ()=>{ toggleMaximize(winId) };
+  win.onmousedown = ()=>{ win.style.zIndex = ++zCounter; updateTabsActive(winId) };
+
+  // resizer
+  res.onmousedown = (e)=>{ resizeStart(e,win) };
+
+  // save window state
+  state.windows.push({id:winId,title,url,appType,left:win.style.left,top:win.style.top,width:win.style.width,height:win.style.height, z:win.style.zIndex});
+  saveState();
+  activateWindow(winId);
+}
+
+function activateWindow(id){
+  const win = document.querySelector(`.win[data-id="${id}"]`);
+  if(!win) return;
+  win.style.display='flex'; win.style.zIndex = ++zCounter;
+  updateTabsActive(id);
+}
+function updateTabs(){
+  tabsEl.querySelectorAll('.tab').forEach(t=>t.remove());
+  document.querySelectorAll('.win').forEach(w=>{
+    const id = w.dataset.id;
+    const title = w.querySelector('.title').textContent;
+    const tab = document.createElement('div'); tab.className='tab'; tab.dataset.win=id; tab.textContent=title;
+    tab.onclick = ()=>activateWindow(id);
+    tabsEl.appendChild(tab);
+  });
+}
+function updateTabsActive(activeId){
+  tabsEl.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t.dataset.win===activeId));
+}
+function closeWindow(id){
+  const win = document.querySelector(`.win[data-id="${id}"]`);
+  if(win) win.remove();
+  state.windows = state.windows.filter(w=>w.id!==id); saveState(); updateTabs();
+}
+function minimizeWindow(id){
+  const win = document.querySelector(`.win[data-id="${id}"]`);
+  if(win) win.style.display='none';
+  updateTabsActive(null);
+}
+function toggleMaximize(id){
+  const win = document.querySelector(`.win[data-id="${id}"]`);
+  if(!win) return;
+  if(win.dataset.max==='1'){
+    win.style.width = win.dataset.prevW; win.style.height = win.dataset.prevH; win.style.left = win.dataset.prevL; win.style.top = win.dataset.prevT;
+    win.dataset.max='0';
+  } else {
+    win.dataset.prevW = win.style.width; win.dataset.prevH = win.style.height; win.dataset.prevL = win.style.left; win.dataset.prevT = win.style.top;
+    win.style.left='0px'; win.style.top='44px'; win.style.width = window.innerWidth+'px'; win.style.height = (window.innerHeight-44)+'px';
+    win.dataset.max='1';
+  }
+}
+
+/* Dragging and resizing */
+let dragInfo = null;
+function dragStart(e,win){
+  e.preventDefault();
+  dragInfo = {el:win, startX:e.clientX, startY:e.clientY, left:parseInt(win.style.left), top:parseInt(win.style.top)};
+  document.onmousemove = dragMove; document.onmouseup = dragEnd;
+}
+function dragMove(e){
+  if(!dragInfo) return;
+  const dx = e.clientX - dragInfo.startX; const dy = e.clientY - dragInfo.startY;
+  dragInfo.el.style.left = (dragInfo.left + dx) + 'px';
+  dragInfo.el.style.top = (dragInfo.top + dy) + 'px';
+}
+function dragEnd(){ document.onmousemove=null; document.onmouseup=null; dragInfo=null; saveWindowPositions() }
+
+let resizeInfo = null;
+function resizeStart(e,win){
+  e.preventDefault(); e.stopPropagation();
+  resizeInfo = {el:win, startX:e.clientX, startY:e.clientY, w:win.offsetWidth, h:win.offsetHeight};
+  document.onmousemove = resizeMove; document.onmouseup = resizeEnd;
+}
+function resizeMove(e){
+  if(!resizeInfo) return;
+  const nx = Math.max(200, resizeInfo.w + (e.clientX - resizeInfo.startX));
+  const ny = Math.max(120, resizeInfo.h + (e.clientY - resizeInfo.startY));
+  resizeInfo.el.style.width = nx + 'px'; resizeInfo.el.style.height = ny + 'px';
+}
+function resizeEnd(){ document.onmousemove=null; document.onmouseup=null; resizeInfo=null; saveWindowPositions() }
+
+function saveWindowPositions(){
+  document.querySelectorAll('.win').forEach(w=>{
+    const id = w.dataset.id;
+    const st = state.windows.find(x=>x.id===id);
+    if(st){ st.left = w.style.left; st.top = w.style.top; st.width = w.style.width; st.height = w.style.height; st.z = w.style.zIndex; }
+  });
+  saveState();
+}
+
+/* -------------------------
+   Text editor
+   ------------------------- */
+function openTextEditor(icon){
+  document.getElementById('editorDialog').style.display='block';
+  document.getElementById('editorName').value = icon.name;
+  document.getElementById('editorArea').value = icon.content || '';
+  document.getElementById('editorDialog').dataset.iconId = icon.id;
+}
+function saveTextFile(){
+  const id = document.getElementById('editorDialog').dataset.iconId;
+  const name = document.getElementById('editorName').value;
+  const content = document.getElementById('editorArea').value;
+  const icon = state.icons.find(i=>i.id===id);
+  if(icon){ icon.name = name; icon.content = content; saveState(); renderDesktop(); }
+  document.getElementById('editorDialog').style.display='none';
+}
+function closeEditor(){ document.getElementById('editorDialog').style.display='none' }
+
+/* -------------------------
+   Terminal
+   ------------------------- */
+function openTerminal(){ document.getElementById('terminalDialog').style.display='block'; document.getElementById('termInput').focus(); }
+function runCmd(){
+  const input = document.getElementById('termInput'); const cmd = input.value.trim(); input.value='';
+  const out = document.getElementById('terminal');
+  if(!cmd) return;
+  out.innerHTML += `<div style="color:#9aa6b2">> ${cmd}</div>`;
+  const parts = cmd.split(' ').filter(Boolean);
+  const c = parts[0];
+  try{
+    if(c==='help'){ out.innerHTML += `<div>Commands: ls open new delete rename wallpaper iconsize help clear</div>`; }
+    else if(c==='ls'){ state.icons.forEach(i=> out.innerHTML += `<div>${i.name}  [${i.type}]</div>`); }
+    else if(c==='open'){ const name = parts.slice(1).join(' '); const ic = state.icons.find(x=>x.name===name); if(ic) openIcon(ic); else out.innerHTML += `<div>Not found</div>`; }
+    else if(c==='new'){ const t = parts[1]; const name = parts.slice(2).join(' ') || (t==='txt'?'untitled.txt':'shortcut'); if(t==='txt') state.icons.push({id:genId(),type:'txt',name,content:''}); else if(t==='link') state.icons.push({id:genId(),type:'link',name,url:'https://example.com'}); saveState(); renderDesktop(); out.innerHTML += `<div>Created ${name}</div>`; }
+    else if(c==='delete'){ const name = parts.slice(1).join(' '); state.icons = state.icons.filter(i=>i.name!==name); saveState(); renderDesktop(); out.innerHTML += `<div>Deleted ${name}</div>`; }
+    else if(c==='rename'){ const oldn = parts[1]; const newn = parts.slice(2).join(' '); const ic = state.icons.find(i=>i.name===oldn); if(ic){ ic.name=newn; saveState(); renderDesktop(); out.innerHTML += `<div>Renamed</div>` } else out.innerHTML += `<div>Not found</div>`; }
+    else if(c==='wallpaper'){ const url = parts[1]; document.body.style.backgroundImage = `url(${url})`; state.wallpaper = url; saveState(); out.innerHTML += `<div>Wallpaper set</div>`; }
+    else if(c==='iconsize'){ const s = parts[1]; setIconSize(s); out.innerHTML += `<div>Icon size ${s}</div>`; }
+    else if(c==='clear'){ out.innerHTML=''; }
+    else out.innerHTML += `<div>Unknown command</div>`;
+  }catch(e){ out.innerHTML += `<div style="color:#ff9a9a">Error: ${e.message}</div>` }
+  out.scrollTop = out.scrollHeight;
+}
+
+/* -------------------------
+   Tabs and fullscreen behavior
+   ------------------------- */
+function ensureTopbarClock(){
+  const clock = document.getElementById('clock');
+  setInterval(()=>{ const d=new Date(); clock.textContent = d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); }, 1000);
+}
+document.getElementById('launcher').onclick = ()=> openLauncher();
+
+function openLauncher(){
+  // simple launcher window with icons
+  openAppWindow({title:'Launcher', appType:'iframe', url:'about:blank'});
+  // replace iframe with a simple grid
+  setTimeout(()=>{
+    const win = document.querySelector('.win:last-child');
+    const content = win.querySelector('.content'); content.innerHTML='';
+    const grid = document.createElement('div'); grid.style.display='flex'; grid.style.flexWrap='wrap'; grid.style.gap='8px'; grid.style.padding='12px';
+    state.icons.forEach(ic=>{
+      const b = document.createElement('div'); b.style.width='120px'; b.style.height='80px'; b.style.background='rgba(255,255,255,0.02)'; b.style.borderRadius='8px'; b.style.display='flex'; b.style.alignItems='center'; b.style.justifyContent='center'; b.style.cursor='pointer';
+      b.textContent = ic.name; b.onclick = ()=>{ openIcon(ic); closeWindow(win.dataset.id) };
+      grid.appendChild(b);
+    });
+    content.appendChild(grid);
+  },100);
+}
+
+/* -------------------------
+   Init and restore windows
+   ------------------------- */
+function restoreWindows(){
+  // create windows from state
+  state.windows.forEach(w=>{
+    try{
+      openAppWindow({title:w.title,url:w.url,appType:w.appType});
+      const el = document.querySelector(`.win[data-id="${state.windows[state.windows.length-1].id}"]`);
+      if(el){ el.style.left = w.left; el.style.top = w.top; el.style.width = w.width; el.style.height = w.height; el.style.zIndex = w.z; }
+    }catch(e){}
+  });
+}
+
+/* -------------------------
+   Utilities and startup
+   ------------------------- */
+function openAppByUrl(url){ openAppWindow({title:url, url, appType:'iframe'}) }
+function openTextFromContent(name,content){ openAppWindow({title:name, appType:'text', content}) }
+
+renderDesktop(); applyIconSize(); ensureTopbarClock(); restoreWindows();
+
+/* keyboard shortcuts */
+document.addEventListener('keydown', (e)=>{
+  if(e.key==='F1'){ e.preventDefault(); openTerminal(); }
+  if(e.key==='F5'){ location.reload() }
+});
+
+/* expose some functions for console testing */
+window.webos = {state, openAppWindow, openTerminal, openNewShortcut, saveState, renderDesktop};
+
+</script>
+</body>
+</html>
