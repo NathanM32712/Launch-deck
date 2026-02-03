@@ -3,8 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <title>Admin Panel</title>
-  <link rel="icon" type="image/png" href="../icon.png" />
+  <link rel="icon" type="image/png" href="icon.png" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+
   <style>
     body {
       margin: 0;
@@ -16,33 +17,72 @@
       justify-content: center;
       height: 100vh;
     }
+
+    /* Back button */
+    #backButton {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      width: 40px;
+      height: 40px;
+      background-image: url('icon.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      cursor: pointer;
+      z-index: 9999;
+    }
+
     .card {
-      width: 460px;
+      width: 520px;
       background: #06273f;
       border-radius: 12px;
       padding: 20px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      max-height: 90vh;
+      overflow-y: auto;
     }
+
     h2 {
       margin: 0 0 12px 0;
       color: #48b0ff;
     }
+
     p {
       margin: 6px 0;
       color: #9bd6ff;
     }
-    input[type="text"], input[type="number"] {
+
+    table {
       width: 100%;
-      padding: 10px;
-      border-radius: 8px;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    th, td {
+      border: 1px solid #14405f;
+      padding: 8px;
+      font-size: 14px;
+    }
+
+    th {
+      background: #08314a;
+      color: #9bd6ff;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      border-radius: 6px;
       border: none;
       background: #08314a;
       color: #cfefff;
-      margin-top: 8px;
+      margin-top: 4px;
       box-sizing: border-box;
     }
+
     button {
-      margin-top: 12px;
+      margin-top: 10px;
       width: 100%;
       padding: 10px;
       border-radius: 8px;
@@ -52,9 +92,11 @@
       font-weight: bold;
       cursor: pointer;
     }
+
     .danger {
       background: linear-gradient(180deg,#ff8a8a,#ff5a5a);
     }
+
     .small {
       font-size: 13px;
       color: #9bd6ff;
@@ -62,91 +104,112 @@
     }
   </style>
 </head>
+
 <body>
-  <div class="card" id="card" aria-live="polite">
-    <h2>Admin Panel</h2>
-    <p id="status">Checking credentials...</p>
 
-    <div id="adminUI" style="display:none;">
-      <p>Operator ID: <strong id="showId"></strong></p>
+<a id="backButton" href="launch-deck.html"></a>
 
-      <label class="small">Set slotsBalance (USD)</label>
-      <input id="balanceInput" type="number" min="0" step="0.01" />
+<div class="card" id="card" aria-live="polite">
+  <h2>Admin Panel</h2>
+  <p id="status">Checking admin cookie...</p>
 
-      <label class="small">Update device-id</label>
-      <input id="deviceIdInput" type="text" placeholder="new device-id" />
+  <div id="adminUI" style="display:none;">
 
-      <label class="small">Update userId</label>
-      <input id="userIdInput" type="text" placeholder="new userId" />
+    <h3 style="color:#48b0ff;margin-top:20px;">Cookie Editor</h3>
+    <p class="small">Edit or delete any cookie stored by this site.</p>
 
-      <button id="setBalanceBtn">Set Balance</button>
-      <button id="logoutBtn" class="danger">Sign Out</button>
+    <table id="cookieTable">
+      <tr>
+        <th>Name</th>
+        <th>Value</th>
+        <th>Actions</th>
+      </tr>
+    </table>
 
-      <p class="small">Note: balance stored as localStorage key <strong>slotsBalance</strong>.</p>
-    </div>
+    <button id="logoutBtn" class="danger">Remove Admin Cookie</button>
   </div>
+</div>
 
-  <script>
-    (function(){
-      const ALLOWED_IDS = ['LOOK-HERE-IM-AN-ADMIN-IM-BETTER-THAN-YOU','id-0tlx2kgb','id-cztpnlhe','device-ul5qv0ul','id-wwxdm17t','yeah bc Im better than you','device-68hzxzg0',];
-      const BALANCE_KEY = 'slotsBalance';
+<script>
+(function(){
 
-      const statusEl = document.getElementById('status');
-      const adminUI = document.getElementById('adminUI');
-      const showId = document.getElementById('showId');
-      const balanceInput = document.getElementById('balanceInput');
-      const deviceIdInput = document.getElementById('deviceIdInput');
-      const userIdInput = document.getElementById('userIdInput');
-      const setBalanceBtn = document.getElementById('setBalanceBtn');
-      const logoutBtn = document.getElementById('logoutBtn');
+  // -------------------------
+  // ADMIN CHECK
+  // -------------------------
+  function hasAdminCookie() {
+    return document.cookie.split("; ").some(c => c.trim() === "admin=true");
+  }
 
-      function readLocal(key) {
-        try { return localStorage.getItem(key); } catch(e) { return null; }
-      }
+  if (!hasAdminCookie()) {
+    document.getElementById("status").textContent = "Access denied. Redirecting...";
+    setTimeout(() => location.href = "launch-deck.html", 600);
+    return;
+  }
 
-      function writeLocal(key, val) {
-        try { localStorage.setItem(key, val); return true; } catch(e) { return false; }
-      }
+  // Show UI
+  document.getElementById("status").style.display = "none";
+  document.getElementById("adminUI").style.display = "block";
 
-      const id = readLocal('device-id') || readLocal('userId');
-      if (!id || !ALLOWED_IDS.includes(id.trim())) {
-        statusEl.textContent = 'Access denied. Redirecting...';
-        setTimeout(() => location.href = 'home.html', 600);
-        return;
-      }
+  // -------------------------
+  // COOKIE VIEWER + EDITOR
+  // -------------------------
+  function loadCookies() {
+    const table = document.getElementById("cookieTable");
 
-      statusEl.style.display = 'none';
-      adminUI.style.display = 'block';
-      showId.textContent = id;
+    table.innerHTML = `
+      <tr>
+        <th>Name</th>
+        <th>Value</th>
+        <th>Actions</th>
+      </tr>
+    `;
 
-      const current = parseFloat(readLocal(BALANCE_KEY));
-      balanceInput.value = isNaN(current) ? '' : current.toFixed(2);
+    const cookies = document.cookie.split("; ");
 
-      setBalanceBtn.addEventListener('click', () => {
-        const val = Number(balanceInput.value);
-        if (!isFinite(val) || val < 0) {
-          alert('Enter a valid non-negative number.');
-          return;
-        }
-        writeLocal(BALANCE_KEY, val.toFixed(2));
+    cookies.forEach(cookie => {
+      if (!cookie) return;
 
-        const newDeviceId = deviceIdInput.value.trim();
-        if (newDeviceId) writeLocal('device-id', newDeviceId);
+      const [name, ...valueParts] = cookie.split("=");
+      const value = decodeURIComponent(valueParts.join("="));
 
-        const newUserId = userIdInput.value.trim();
-        if (newUserId) writeLocal('userId', newUserId);
+      const row = document.createElement("tr");
 
-        alert('Balance and IDs updated.');
-      });
+      row.innerHTML = `
+        <td>${name}</td>
+        <td><input type="text" id="edit-${name}" value="${value}"></td>
+        <td>
+          <button onclick="saveCookie('${name}')">Save</button>
+          <button class="danger" onclick="deleteCookie('${name}')">Delete</button>
+        </td>
+      `;
 
-      logoutBtn.addEventListener('click', () => {
-        document.cookie = "localaccount=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        location.href = 'home.html';
-      });
-    })();
-  </script>
+      table.appendChild(row);
+    });
+  }
+
+  window.saveCookie = function(name) {
+    const newVal = document.getElementById("edit-" + name).value;
+    document.cookie = name + "=" + encodeURIComponent(newVal) + "; path=/;";
+    loadCookies();
+  };
+
+  window.deleteCookie = function(name) {
+    document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    loadCookies();
+  };
+
+  loadCookies();
+
+  // -------------------------
+  // LOGOUT (remove admin cookie)
+  // -------------------------
+  document.getElementById("logoutBtn").addEventListener("click", () => {
+    document.cookie = "admin=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    location.href = "launch-deck.html";
+  });
+
+})();
+</script>
+
 </body>
 </html>
-
-
-
