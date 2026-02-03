@@ -12,34 +12,27 @@
       padding: 20px;
       text-align: center;
     }
-
-    /* Top-left silent icon */
     .corner-icon {
       position: fixed;
       top: 12px;
       left: 12px;
       z-index: 100;
     }
-
     .corner-icon img {
       height: 60px;
       background: black;
       border-radius: 4px;
     }
-
     .title-bar h1 {
       margin: 0;
       font-size: 48px;
     }
-
-    /* Tabs */
     .tabs {
       display: flex;
       justify-content: center;
       gap: 20px;
       margin: 20px 0;
     }
-
     .tab {
       padding: 10px 20px;
       background: #222;
@@ -47,16 +40,12 @@
       cursor: pointer;
       transition: 0.2s;
     }
-
     .tab:hover {
       background: #444;
     }
-
     .tab.active {
       background: #666;
     }
-
-    /* Button grid */
     .button-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -64,7 +53,6 @@
       max-width: 800px;
       margin: 0 auto;
     }
-
     .game-button {
       padding: 15px;
       font-size: 16px;
@@ -75,16 +63,12 @@
       cursor: pointer;
       transition: background-color 0.2s;
     }
-
     .game-button:hover {
       background-color: #555;
     }
-
-    /* Hide sections */
     .section {
       display: none;
     }
-
     .section.active {
       display: grid;
     }
@@ -92,7 +76,6 @@
 </head>
 <body>
 
-  <!-- Silent icon -->
   <a href="../Launch-Deck" class="corner-icon">
     <img src="../icon.png" alt="">
   </a>
@@ -101,14 +84,12 @@
     <h1>Launch Deck</h1>
   </div>
 
-  <!-- Tabs -->
   <div class="tabs">
     <div class="tab active" onclick="showTab('info')">Info</div>
     <div class="tab" onclick="showTab('tools')">Tools</div>
     <div class="tab" onclick="showTab('games')">Games</div>
   </div>
 
-  <!-- INFO SECTION -->
   <div id="info" class="section active button-grid">
     <button class="game-button" onclick="location.href='random quote.html'">random Quote</button>
     <button class="game-button" onclick="location.href='updatelogs.html'">Update Logs</button>
@@ -116,7 +97,6 @@
     <button class="game-button" onclick="location.href='admin.html'">admin panel</button>
   </div>
 
-  <!-- TOOLS SECTION -->
   <div id="tools" class="section button-grid">
     <button class="game-button" onclick="location.href='othergames/tab bomb.html.html'">Tab bomb</button>
     <button class="game-button" onclick="location.href='othergames/calc (calc is short for calculator just using slang ).html'">Calc</button>
@@ -124,7 +104,6 @@
     <button class="game-button" onclick="location.href='othergames/Web OS.html'">OS</button>
   </div>
 
-  <!-- GAMES SECTION -->
   <div id="games" class="section button-grid">
     <button class="game-button" onclick="location.href='othergames/idk.html'">Click Me</button>
     <button class="game-button" onclick="location.href='Nathan-s-Casino/home.html'">Casino</button>
@@ -139,22 +118,53 @@
     function showTab(tabName) {
       document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-
       document.getElementById(tabName).classList.add('active');
       event.target.classList.add('active');
     }
+
+    let sequence = "";
+    const target = "admin";
+
+    const secretBox = document.createElement("div");
+    secretBox.style.position = "fixed";
+    secretBox.style.top = "50%";
+    secretBox.style.left = "50%";
+    secretBox.style.transform = "translate(-50%, -50%)";
+    secretBox.style.background = "#06273f";
+    secretBox.style.padding = "20px";
+    secretBox.style.borderRadius = "10px";
+    secretBox.style.boxShadow = "0 0 20px rgba(0,0,0,0.6)";
+    secretBox.style.display = "none";
+    secretBox.style.zIndex = "9999";
+
+    secretBox.innerHTML = `
+      <p style='color:#9bd6ff; font-family:Segoe UI;'>Enter admin phrase:</p>
+      <input id='adminPhrase' type='text' style='width:100%; padding:10px; border-radius:6px; border:none; background:#08314a; color:#cfefff;'>
+      <button id='adminSubmit' style='margin-top:10px; width:100%; padding:10px; border-radius:6px; border:none; background:#48b0ff; font-weight:bold; cursor:pointer;'>Unlock Admin</button>
+    `;
+
+    document.body.appendChild(secretBox);
+
+    document.addEventListener("keydown", (e) => {
+      sequence += e.key.toLowerCase();
+      if (sequence.length > 5) sequence = sequence.slice(-5);
+      if (sequence === target) {
+        secretBox.style.display = "block";
+        document.getElementById("adminPhrase").focus();
+      }
+    });
+
+    document.getElementById("adminSubmit").addEventListener("click", () => {
+      const phrase = document.getElementById("adminPhrase").value.trim();
+      if (phrase === "this website is the G.O.A.T.") {
+        document.cookie = "admin=true; path=/;";
+        alert("Admin unlocked!");
+        secretBox.style.display = "none";
+      } else {
+        alert("Incorrect phrase.");
+      }
+    });
   </script>
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
