@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cookie Viewer</title>
+
+    <!-- Favicon (same folder) -->
+    <link rel="icon" type="image/png" href="icon.png">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #111;
+            color: #eee;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Back button icon */
+        #backButton {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            width: 40px;
+            height: 40px;
+            background-image: url('icon.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            cursor: pointer;
+            z-index: 9999;
+        }
+
+        h1 {
+            margin-top: 60px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #444;
+            padding: 8px;
+        }
+
+        th {
+            background: #222;
+        }
+
+        .delete-btn {
+            background: #c33;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Back button -->
+<a id="backButton" href="Launch-Deck"></a>
+
+<h1>Cookie Viewer</h1>
+<p>This page shows all cookies created by this website.</p>
+
+<table id="cookieTable">
+    <tr>
+        <th>Name</th>
+        <th>Value</th>
+        <th>Actions</th>
+    </tr>
+</table>
+
+<script>
+function loadCookies() {
+    const table = document.getElementById("cookieTable");
+
+    // Reset table header
+    table.innerHTML = `
+        <tr>
+            <th>Name</th>
+            <th>Value</th>
+            <th>Actions</th>
+        </tr>
+    `;
+
+    const cookies = document.cookie.split("; ");
+
+    cookies.forEach(cookie => {
+        if (!cookie) return;
+
+        const [name, ...valueParts] = cookie.split("=");
+        const value = valueParts.join("=");
+
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${name}</td>
+            <td>${decodeURIComponent(value)}</td>
+            <td><button class="delete-btn" onclick="deleteCookie('${name}')">Delete</button></td>
+        `;
+
+        table.appendChild(row);
+    });
+}
+
+function deleteCookie(name) {
+    document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    loadCookies();
+}
+
+// Auto-refresh every second
+setInterval(loadCookies, 1000);
+
+loadCookies();
+</script>
+
+</body>
+</html>
