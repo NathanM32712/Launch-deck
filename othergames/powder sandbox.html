@@ -1,1 +1,536 @@
-placeholder sandbox expected by 3:30 PM
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Powder Sandbox</title>
+<style>
+  body {
+    margin: 0;
+    background: #111;
+    color: #eee;
+    font-family: Arial, sans-serif;
+    user-select: none;
+    overflow: hidden;
+  }
+  #top-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: #222;
+    position: relative;
+    z-index: 10;
+  }
+  #material-bar {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    white-space: nowrap;
+    flex: 1;
+  }
+  .mat-btn {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    border: 2px solid #0004;
+    flex-shrink: 0;
+    font-size: 12px;
+  }
+  #controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 8px;
+    font-size: 12px;
+  }
+  .mode-btn {
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #555;
+    cursor: pointer;
+    font-size: 11px;
+  }
+  .mode-btn.active {
+    background: #4caf50;
+    border-color: #7cff9a;
+  }
+  #brush-size {
+    width: 80px;
+  }
+  #sim {
+    display: block;
+    margin: 0;
+    background: #000;
+    image-rendering: pixelated;
+  }
+</style>
+</head>
+<body>
+
+<div id="top-bar">
+  <div id="material-bar"></div>
+  <div id="controls">
+    <button id="mode-draw" class="mode-btn active">DRAW</button>
+    <button id="mode-mix" class="mode-btn">MIX</button>
+    <label>Brush
+      <input id="brush-size" type="range" min="1" max="8" value="3">
+    </label>
+  </div>
+</div>
+
+<canvas id="sim"></canvas>
+
+<script>
+// ---------- MATERIALS ----------
+function randomShade(base, variance = 25) {
+  const clamp = v => Math.max(0, Math.min(255, v));
+  return {
+    r: clamp(base.r + (Math.random() * variance - variance/2)),
+    g: clamp(base.g + (Math.random() * variance - variance/2)),
+    b: clamp(base.b + (Math.random() * variance - variance/2))
+  };
+}
+
+const MATERIALS = {
+  sand:    { name:"SAND",     type:"powder", base:{r:200,g:170,b:80},  variants:[], density:3 },
+  wetsand: { name:"WET SAND", type:"powder", base:{r:150,g:130,b:70},  variants:[], density:4 },
+  dirt:    { name:"DIRT",     type:"powder", base:{r:110,g:80,b:40},   variants:[], density:3 },
+  ash:     { name:"ASH",      type:"powder", base:{r:90,g:90,b:90},    variants:[], density:2 },
+
+  stone:   { name:"STONE",    type:"solid",  base:{r:120,g:120,b:120}, variants:[], density:10 },
+  metal:   { name:"METAL",    type:"solid",  base:{r:160,g:160,b:180}, variants:[], density:11 },
+  wood:    { name:"WOOD",     type:"solid",  base:{r:120,g:80,b:40},   variants:[], density:8, flammable:true },
+  charcoal:{ name:"CHARCOAL", type:"solid",  base:{r:40,g:40,b:40},    variants:[], density:7, flammable:true },
+
+  water:   { name:"WATER",    type:"liquid", base:{r:40,g:120,b:255},  variants:[], density:1, viscosity:0.12 },
+  mud:     { name:"MUD",      type:"liquid", base:{r:120,g:90,b:50},   variants:[], density:4, viscosity:0.5 },
+  oil:     { name:"OIL",      type:"liquid", base:{r:40,g:40,b:10},    variants:[], density:0.8, viscosity:0.25 },
+  acid:    { name:"ACID",     type:"liquid", base:{r:80,g:255,b:80},   variants:[], density:1.1, viscosity:0.2 },
+  lava:    { name:"LAVA",     type:"liquid", base:{r:255,g:80,b:20},   variants:[], density:5, viscosity:0.7 },
+
+  steam:   { name:"STEAM",    type:"gas",    base:{r:200,g:200,b:200}, variants:[], density:0 },
+  smoke:   { name:"SMOKE",    type:"gas",    base:{r:80,g:80,b:80},    variants:[], density:-1 },
+  fire:    { name:"FIRE",     type:"gas",    base:{r:255,g:140,b:40},  variants:[], density:-1 }
+};
+
+for (let k in MATERIALS) {
+  for (let i=0;i<5;i++) MATERIALS[k].variants.push(randomShade(MATERIALS[k].base));
+}
+
+// ---------- UI ----------
+const bar = document.getElementById("material-bar");
+let currentMaterial = "sand";
+
+for (let key in MATERIALS) {
+  const btn = document.createElement("div");
+  btn.className = "mat-btn";
+  const shade = MATERIALS[key].variants[Math.floor(Math.random()*5)];
+  btn.style.background = `rgb(${shade.r},${shade.g},${shade.b})`;
+  btn.textContent = MATERIALS[key].name;
+  btn.onclick = () => currentMaterial = key;
+  bar.appendChild(btn);
+}
+
+let mode = "draw";
+const modeDrawBtn = document.getElementById("mode-draw");
+const modeMixBtn  = document.getElementById("mode-mix");
+modeDrawBtn.onclick = () => {
+  mode = "draw";
+  modeDrawBtn.classList.add("active");
+  modeMixBtn.classList.remove("active");
+};
+modeMixBtn.onclick = () => {
+  mode = "mix";
+  modeMixBtn.classList.add("active");
+  modeDrawBtn.classList.remove("active");
+};
+const brushSlider = document.getElementById("brush-size");
+
+// ---------- SIM / RESIZE ----------
+const canvas = document.getElementById("sim");
+const ctx = canvas.getContext("2d");
+
+let W = 300;
+let H = 200;
+let grid = [];
+let colorGrid = [];
+let tempGrid = [];
+let lifeGrid = [];
+
+function createGrid() {
+  grid = new Array(W * H).fill(null);
+  colorGrid = new Array(W * H).fill(null);
+  tempGrid = new Array(W * H).fill(20);
+  lifeGrid = new Array(W * H).fill(0);
+}
+
+function resizeSim() {
+  const topBar = document.getElementById("top-bar");
+  const screenW = window.innerWidth;
+  const screenH = window.innerHeight - topBar.offsetHeight;
+
+  const simW = 300;
+  const scale = screenW / simW;
+  const simH = Math.max(40, Math.floor(screenH / scale));
+
+  W = simW;
+  H = simH;
+
+  canvas.width = W;
+  canvas.height = H;
+  canvas.style.width = screenW + "px";
+  canvas.style.height = screenH + "px";
+
+  createGrid();
+}
+
+window.addEventListener("resize", resizeSim);
+resizeSim();
+
+function idx(x,y){ return y*W + x; }
+
+// border is solid
+function get(x,y){
+  if (x<0 || y<0 || x>=W || y>=H) return "border";
+  return grid[idx(x,y)];
+}
+function set(x,y,mat,color=null){
+  if (x<0 || y<0 || x>=W || y>=H) return;
+  const i = idx(x,y);
+  grid[i] = mat;
+  colorGrid[i] = color;
+  if (mat === "fire") lifeGrid[i] = 25 + Math.floor(Math.random()*15);
+  if (mat === "smoke") lifeGrid[i] = 40;
+  if (mat === "steam") lifeGrid[i] = 35;
+}
+
+// ---------- HELPERS ----------
+function isEmpty(x,y){ return get(x,y) === null; }
+
+function touchesType(x,y,matName){
+  for (let dy=-1; dy<=1; dy++){
+    for (let dx=-1; dx<=1; dx++){
+      if (dx===0 && dy===0) continue;
+      if (get(x+dx,y+dy) === matName) return true;
+    }
+  }
+  return false;
+}
+
+// ---------- MIXING ----------
+function mix(a,b){
+  if (!a || !b || a===b) return null;
+
+  // acid dissolves everything except border
+  if (a==="acid" && b!=="border") return "acid";
+  if (b==="acid" && a!=="border") return "acid";
+
+  // water + sand/dirt/ash -> mud
+  if ((a==="water" && (b==="sand"||b==="dirt"||b==="ash")) ||
+      (b==="water" && (a==="sand"||a==="dirt"||a==="ash"))) return "mud";
+
+  // sand + water -> wetsand
+  if ((a==="sand" && b==="water") || (b==="sand" && a==="water")) return "wetsand";
+
+  // lava + water -> stone + steam (handled partly in update)
+  if ((a==="lava" && b==="water") || (a==="water" && b==="lava")) return "stone";
+
+  // oil + water -> oil (floats, but here just keep oil)
+  if ((a==="oil" && b==="water") || (a==="water" && b==="oil")) return "oil";
+
+  return null;
+}
+
+// ---------- PHYSICS ----------
+function fallPowder(x,y,mat,steep=false){
+  if (isEmpty(x,y+1)) {
+    set(x,y+1,mat,colorGrid[idx(x,y)]);
+    set(x,y,null);
+    return;
+  }
+  const dirs = Math.random()<0.5 ? [-1,1] : [1,-1];
+  for (let d of dirs){
+    const nx = x+d, ny = y+1;
+    if (!isEmpty(nx,ny)) continue;
+    // no corner leak: side must be empty too
+    if (!isEmpty(x+d,y)) continue;
+    if (steep && Math.random() < 0.6) continue; // wet sand slides less
+    set(nx,ny,mat,colorGrid[idx(x,y)]);
+    set(x,y,null);
+    return;
+  }
+}
+
+function flowLiquid(x,y,mat,viscosity){
+  // fall straight if possible
+  if (isEmpty(x,y+1)) {
+    set(x,y+1,mat,colorGrid[idx(x,y)]);
+    set(x,y,null);
+    return;
+  }
+
+  // water thinner: more sideways attempts
+  if (Math.random() < viscosity) return;
+
+  const dirs = Math.random()<0.5 ? [-1,1] : [1,-1];
+  for (let d of dirs){
+    const nx = x+d, ny = y;
+    if (!isEmpty(nx,ny)) continue;
+
+    // allow water to slide even if below-side is empty (thinner)
+    if (mat !== "water") {
+      if (isEmpty(nx,ny+1) && !isEmpty(x,y+1)) continue;
+    }
+
+    set(nx,ny,mat,colorGrid[idx(x,y)]);
+    set(x,y,null);
+    return;
+  }
+
+  // water can be pushed upward by heavier stuff
+  if (mat === "water") {
+    const above = get(x,y-1);
+    if (above && above!=="border" && MATERIALS[above]?.density > MATERIALS.water.density) {
+      if (isEmpty(x,y-1)) {
+        const ci = idx(x,y), ai = idx(x,y-1);
+        const c1 = colorGrid[ci], c2 = colorGrid[ai];
+        const mAbove = grid[ai];
+        set(x,y-1,"water",c1);
+        set(x,y,mAbove,c2);
+      }
+    }
+  }
+}
+
+function riseGas(x,y,mat){
+  // steam rises slowly
+  if (mat === "steam" && Math.random() < 0.7) return;
+  if (mat === "smoke" && Math.random() < 0.5) return;
+
+  if (isEmpty(x,y-1)) {
+    set(x,y-1,mat,colorGrid[idx(x,y)]);
+    set(x,y,null);
+  } else {
+    // small sideways drift
+    const dirs = Math.random()<0.5 ? [-1,1] : [1,-1];
+    for (let d of dirs){
+      const nx = x+d, ny = y-1;
+      if (isEmpty(nx,ny)) {
+        set(nx,ny,mat,colorGrid[idx(x,y)]);
+        set(x,y,null);
+        return;
+      }
+    }
+  }
+}
+
+// ---------- UPDATE ----------
+function update(){
+  // simple temperature diffusion + fire heat
+  for (let y=0;y<H;y++){
+    for (let x=0;x<W;x++){
+      const i = idx(x,y);
+      let t = tempGrid[i];
+      const mat = grid[i];
+
+      if (mat === "lava") t += 3;
+      if (mat === "fire") t += 4;
+      if (mat === "water") t -= 1;
+      if (mat === "steam") t -= 1;
+      if (mat === "acid") t += 0.5;
+
+      // cool toward ambient
+      t += (20 - t)*0.02;
+      tempGrid[i] = t;
+    }
+  }
+
+  for (let y=H-1; y>=0; y--){
+    for (let x=0; x<W; x++){
+      const mat = get(x,y);
+      if (!mat || mat==="border") continue;
+      const i = idx(x,y);
+      const def = MATERIALS[mat];
+      if (!def) continue;
+
+      // density-based pushing: heavier pushes lighter below
+      const below = get(x,y+1);
+      if (below && below!=="border" && below!==mat) {
+        const d1 = def.density ?? 0;
+        const d2 = MATERIALS[below]?.density ?? 0;
+        if (d1 > d2 && mat!=="gas" && def.type!=="gas") {
+          const c1 = colorGrid[i], c2 = colorGrid[idx(x,y+1)];
+          set(x,y+1,mat,c1);
+          set(x,y,below,c2);
+          continue;
+        }
+      }
+
+      // mixing with below
+      if (below && below!=="border" && below!==mat){
+        const result = mix(mat,below);
+        if (result){
+          const shade = MATERIALS[result].variants[Math.floor(Math.random()*5)];
+          set(x,y,result,shade);
+          set(x,y+1,result,shade);
+          // lava+water -> also steam above
+          if ((mat==="lava" && below==="water") || (mat==="water" && below==="lava")){
+            if (isEmpty(x,y-1)) {
+              const sShade = MATERIALS.steam.variants[Math.floor(Math.random()*5)];
+              set(x,y-1,"steam",sShade);
+            }
+          }
+          continue;
+        }
+      }
+
+      // combustion: wood/charcoal ignite if hot or near fire/lava
+      if (mat==="wood" || mat==="charcoal") {
+        const t = tempGrid[i];
+        const hotEnough = (mat==="wood" && t>=150) || (mat==="charcoal" && t>=250);
+        if (hotEnough || touchesType(x,y,"fire") || touchesType(x,y,"lava")) {
+          const fShade = MATERIALS.fire.variants[Math.floor(Math.random()*5)];
+          set(x,y,"fire",fShade);
+          continue;
+        }
+      }
+
+      // fire behavior
+      if (mat==="fire") {
+        lifeGrid[i]--;
+        // spread to flammable neighbors
+        for (let dy=-1; dy<=1; dy++){
+          for (let dx=-1; dx<=1; dx++){
+            if (dx===0 && dy===0) continue;
+            const nx = x+dx, ny = y+dy;
+            const nMat = get(nx,ny);
+            if (!nMat || nMat==="border") continue;
+            if (nMat==="wood" || nMat==="charcoal" || nMat==="oil") {
+              if (Math.random() < 0.25) {
+                const fShade = MATERIALS.fire.variants[Math.floor(Math.random()*5)];
+                set(nx,ny,"fire",fShade);
+              }
+            }
+            if (nMat==="water" || nMat==="mud") {
+              // water cools fire
+              if (Math.random() < 0.4) lifeGrid[i]-=3;
+            }
+          }
+        }
+        // create smoke sometimes
+        if (Math.random() < 0.15 && isEmpty(x,y-1)) {
+          const sShade = MATERIALS.smoke.variants[Math.floor(Math.random()*5)];
+          set(x,y-1,"smoke",sShade);
+        }
+        if (lifeGrid[i] <= 0) {
+          // fire burns into charcoal or ash
+          const out = Math.random()<0.5 ? "charcoal" : "ash";
+          const shade = MATERIALS[out].variants[Math.floor(Math.random()*5)];
+          set(x,y,out,shade);
+        } else {
+          riseGas(x,y,"fire");
+        }
+        continue;
+      }
+
+      // smoke / steam lifetime
+      if (mat==="smoke" || mat==="steam") {
+        lifeGrid[i]--;
+        if (lifeGrid[i] <= 0) {
+          set(x,y,null,null);
+          continue;
+        }
+        riseGas(x,y,mat);
+        continue;
+      }
+
+      if (def.type==="powder"){
+        const steep = (mat==="wetsand");
+        fallPowder(x,y,mat,steep);
+      } else if (def.type==="liquid"){
+        const visc = def.viscosity ?? 0.3;
+        flowLiquid(x,y,mat,visc);
+      } else if (def.type==="gas"){
+        riseGas(x,y,mat);
+      }
+    }
+  }
+}
+
+// ---------- RENDER ----------
+function render(){
+  const img = ctx.getImageData(0,0,W,H);
+  const data = img.data;
+  for (let i=0;i<grid.length;i++){
+    const mat = grid[i];
+    if (!mat){
+      data[i*4+0]=0;
+      data[i*4+1]=0;
+      data[i*4+2]=0;
+      data[i*4+3]=255;
+      continue;
+    }
+    const c = colorGrid[i] || MATERIALS[mat].base;
+    data[i*4+0]=c.r;
+    data[i*4+1]=c.g;
+    data[i*4+2]=c.b;
+    data[i*4+3]=255;
+  }
+  ctx.putImageData(img,0,0);
+}
+
+// ---------- BRUSH ----------
+let mouseDown = false;
+
+canvas.addEventListener("mousedown", ()=>mouseDown=true);
+canvas.addEventListener("mouseup",   ()=>mouseDown=false);
+canvas.addEventListener("mouseleave",()=>mouseDown=false);
+
+canvas.addEventListener("mousemove", e=>{
+  if (!mouseDown) return;
+  const rect = canvas.getBoundingClientRect();
+  const sx = (e.clientX - rect.left) / rect.width;
+  const sy = (e.clientY - rect.top)  / rect.height;
+  const cx = Math.floor(sx * W);
+  const cy = Math.floor(sy * H);
+  const r = parseInt(brushSlider.value,10);
+
+  for (let dy=-r; dy<=r; dy++){
+    for (let dx=-r; dx<=r; dx++){
+      if (dx*dx + dy*dy > r*r) continue;
+      const x = cx+dx, y = cy+dy;
+      if (x<0||y<0||x>=W||y>=H) continue;
+
+      const existing = get(x,y);
+      if (mode==="draw"){
+        if (existing !== currentMaterial){
+          const shade = MATERIALS[currentMaterial].variants[Math.floor(Math.random()*5)];
+          set(x,y,currentMaterial,shade);
+        }
+      } else if (mode==="mix"){
+        if (!existing){
+          const shade = MATERIALS[currentMaterial].variants[Math.floor(Math.random()*5)];
+          set(x,y,currentMaterial,shade);
+        } else if (existing !== currentMaterial){
+          const result = mix(currentMaterial, existing);
+          if (result){
+            const shade = MATERIALS[result].variants[Math.floor(Math.random()*5)];
+            set(x,y,result,shade);
+          }
+        }
+      }
+    }
+  }
+});
+
+// ---------- MAIN LOOP ----------
+function loop(){
+  update();
+  render();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
