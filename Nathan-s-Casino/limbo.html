@@ -3,51 +3,102 @@
 <head>
 <meta charset="UTF-8">
 <title>Limbo</title>
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" href="icon.png">
+
 <style>
   body {
-    background:#0f0f1a;
+    background:#0d0d16;
     color:white;
-    font-family:Arial;
+    font-family:Arial, sans-serif;
     display:flex;
     justify-content:center;
-    padding-top:40px;
+    padding-top:60px;
   }
+
+  /* Back Button */
+  .back-btn {
+    position:fixed;
+    top:10px;
+    left:10px;
+    width:40px;
+    height:40px;
+    background-image:url('icon.png');
+    background-size:contain;
+    background-repeat:no-repeat;
+    background-position:center;
+    cursor:pointer;
+    z-index:9999;
+  }
+
   .game {
     background:#1a1a2e;
-    padding:20px;
-    border-radius:10px;
-    width:350px;
+    padding:25px;
+    border-radius:12px;
+    width:380px;
     text-align:center;
+    box-shadow:0 0 20px rgba(0,0,0,0.5);
   }
+
   input {
-    width:120px;
-    padding:6px;
-    margin:5px;
-    border-radius:5px;
+    width:130px;
+    padding:8px;
+    margin:6px;
+    border-radius:6px;
     border:none;
+    background:#0f0f1a;
+    color:white;
+    font-size:16px;
   }
+
   #spinBtn {
-    width:200px;
-    height:200px;
+    width:220px;
+    height:220px;
     background:#4ecca3;
     border:none;
-    border-radius:10px;
-    font-size:30px;
+    border-radius:20px;
+    font-size:32px;
     font-weight:bold;
     cursor:pointer;
-    margin-top:15px;
+    margin-top:20px;
+    transition:0.15s;
   }
+
   #spinBtn:active {
+    transform:scale(0.97);
     background:#3ba987;
   }
+
   #result {
-    margin-top:15px;
-    font-size:20px;
+    margin-top:20px;
+    font-size:22px;
     min-height:30px;
+  }
+
+  /* Animated multiplier bar */
+  #bar {
+    width:100%;
+    height:14px;
+    background:#111;
+    border-radius:8px;
+    margin-top:20px;
+    overflow:hidden;
+    position:relative;
+  }
+
+  #barFill {
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg, #ff3d3d, #ffb13d, #4ecca3);
+    transition:width 0.15s;
   }
 </style>
 </head>
 <body>
+
+<!-- Back Button -->
+<a class="back-btn" href="../launch-deck.html"></a>
 
 <div class="game">
   <h1>Limbo</h1>
@@ -58,8 +109,9 @@
   <br>
   <input type="number" id="mult" placeholder="Target Mult" min="1" step="0.1">
 
-  <br><br>
   <button id="spinBtn">SPIN</button>
+
+  <div id="bar"><div id="barFill"></div></div>
 
   <div id="result"></div>
 </div>
@@ -105,33 +157,38 @@ function saveBalance() {
   updateBalance();
 }
 
-// ---------------- LIMBO LOGIC ----------------
-
-// rarity-weighted multiplier generator
+// ---------------- LIMBO RNG ----------------
 function generateMultiplier() {
-  // Higher numbers are rarer
-  // 1–10 common, 10–50 uncommon, 50–200 rare, 200–1000 ultra rare
   const r = Math.random();
 
-  if (r < 0.60) return (1 + Math.random()*9);        // 60% chance
-  if (r < 0.90) return (10 + Math.random()*40);      // 30% chance
-  if (r < 0.99) return (50 + Math.random()*150);     // 9% chance
-  return (200 + Math.random()*800);                  // 1% chance
+  if (r < 0.60) return 1 + Math.random()*9;       // common
+  if (r < 0.90) return 10 + Math.random()*40;     // uncommon
+  if (r < 0.99) return 50 + Math.random()*150;    // rare
+  return 200 + Math.random()*800;                 // ultra rare
 }
 
-function spinAnimation(callback) {
+// ---------------- SPIN ANIMATION ----------------
+function animateSpin(callback) {
+  let steps = 50;
   let count = 0;
+
   const interval = setInterval(() => {
     const temp = generateMultiplier();
     document.getElementById("spinBtn").textContent = temp.toFixed(2) + "x";
+
+    // fun bar animation
+    const pct = Math.min(100, (temp / 1000) * 100);
+    document.getElementById("barFill").style.width = pct + "%";
+
     count++;
-    if (count >= 50) {
+    if (count >= steps) {
       clearInterval(interval);
       callback();
     }
   }, 40);
 }
 
+// ---------------- GAME LOGIC ----------------
 document.getElementById("spinBtn").onclick = () => {
   const bet = parseFloat(document.getElementById("bet").value);
   const target = parseFloat(document.getElementById("mult").value);
@@ -150,23 +207,25 @@ document.getElementById("spinBtn").onclick = () => {
     return;
   }
 
-  // subtract bet immediately
   balance -= bet;
   saveBalance();
 
   resultDiv.textContent = "Spinning...";
 
-  spinAnimation(() => {
+  animateSpin(() => {
     const rolled = generateMultiplier();
     document.getElementById("spinBtn").textContent = rolled.toFixed(2) + "x";
+
+    const pct = Math.min(100, (rolled / 1000) * 100);
+    document.getElementById("barFill").style.width = pct + "%";
 
     if (target < rolled) {
       const win = bet * target;
       balance += win;
       saveBalance();
-      resultDiv.textContent = `WIN! Rolled ${rolled.toFixed(2)}x — You won $${win.toFixed(2)}`;
+      resultDiv.innerHTML = `<span style="color:#4ecca3;">WIN!</span> Rolled ${rolled.toFixed(2)}x — +$${win.toFixed(2)}`;
     } else {
-      resultDiv.textContent = `LOSS! Rolled ${rolled.toFixed(2)}x`;
+      resultDiv.innerHTML = `<span style="color:#ff4d4d;">LOSS!</span> Rolled ${rolled.toFixed(2)}x`;
     }
   });
 };
