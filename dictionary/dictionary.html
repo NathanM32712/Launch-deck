@@ -27,7 +27,6 @@
 
 <h2>Dictionary Search</h2>
 
-<!-- Optional: user can still upload extra .txt files -->
 <input type="file" id="fileInput" accept=".txt" multiple>
 <br><br>
 
@@ -37,13 +36,20 @@
 <script>
 let lines = [];
 
+// Escape HTML so dictionary text cannot create links or HTML
+function escapeHTML(str) {
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
 // Load dictionary.txt automatically
 function loadMainDictionary() {
     fetch("dictionary.txt")
         .then(r => r.text())
         .then(t => {
             lines.push(...t.split(/\r?\n/));
-            console.log("Loaded dictionary.txt");
         })
         .catch(err => console.log("dictionary.txt not found"));
 }
@@ -53,6 +59,8 @@ document.getElementById("fileInput").addEventListener("change", function() {
     const files = this.files;
 
     for (let file of files) {
+        if (!file.name.endsWith(".txt")) continue;
+
         const reader = new FileReader();
         reader.onload = function(e) {
             lines.push(...e.target.result.split(/\r?\n/));
@@ -82,6 +90,10 @@ function search() {
 
             let snippet = lines.slice(start, end + 1).join("\n");
 
+            // Escape HTML so no links or HTML appear
+            snippet = escapeHTML(snippet);
+
+            // Highlight the matched word
             const regex = new RegExp(query, "gi");
             snippet = snippet.replace(regex, match => `<mark>${match}</mark>`);
 
