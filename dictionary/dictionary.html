@@ -54,7 +54,7 @@ function loadMainDictionary() {
         .catch(err => console.log("dictionary.txt not found"));
 }
 
-// Load user-selected files
+// Load user-selected files (but never HTML)
 document.getElementById("fileInput").addEventListener("change", function() {
     const files = this.files;
 
@@ -90,10 +90,8 @@ function search() {
 
             let snippet = lines.slice(start, end + 1).join("\n");
 
-            // Escape HTML so no links or HTML appear
             snippet = escapeHTML(snippet);
 
-            // Highlight the matched word
             const regex = new RegExp(query, "gi");
             snippet = snippet.replace(regex, match => `<mark>${match}</mark>`);
 
