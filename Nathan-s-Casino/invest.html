@@ -141,11 +141,11 @@
 </div>
 
 <script>
-// ---------------- COOKIE HELPERS ----------------
+/* ---------------- COOKIE HELPERS ---------------- */
 function setCookie(name, value, days) {
   const d = new Date();
   d.setTime(d.getTime() + (days*24*60*60*1000));
-  document.cookie = name + "=" + encodeURIComponent(value) + ";expires=" + d.toUTCString() + ";path=/";
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${d.toUTCString()};path=/`;
 }
 
 function getCookie(name) {
@@ -158,41 +158,34 @@ function getCookie(name) {
   return null;
 }
 
-// ---------------- STATE ----------------
+/* ---------------- BALANCE ---------------- */
 let balance = 0;
+
+function loadBalance() {
+  const stored = getCookie("balance");
+  balance = stored && !isNaN(stored) ? parseInt(stored) : 0;
+  updateBalance();
+}
+
+function updateBalance() {
+  document.getElementById("balance").textContent = balance.toFixed(2);
+}
+
+function saveBalance() {
+  setCookie("balance", balance, 365);
+  updateBalance();
+}
+
+/* ---------------- STATE ---------------- */
 let candles = [];
 let currentPrice = 100;
 let shares = 0;
 let avgCost = 0;
 
-const balanceSpan = document.getElementById("balance");
-const priceSpan = document.getElementById("price");
-const sharesSpan = document.getElementById("shares");
-const avgCostSpan = document.getElementById("avgCost");
-const unrealizedSpan = document.getElementById("unrealized");
-const statusDiv = document.getElementById("status");
-
-const oVal = document.getElementById("oVal");
-const hVal = document.getElementById("hVal");
-const lVal = document.getElementById("lVal");
-const cVal = document.getElementById("cVal");
-
 const canvas = document.getElementById("chart");
 const ctx = canvas.getContext("2d");
 
-// ---------------- BALANCE ----------------
-function initBalance() {
-  const stored = getCookie("balance");
-  balance = stored && !isNaN(stored) ? parseInt(stored) : 1000;
-  saveBalance();
-}
-
-function saveBalance() {
-  setCookie("balance", balance, 365);
-  balanceSpan.textContent = balance.toFixed(2);
-}
-
-// ---------------- CANDLE GENERATION ----------------
+/* ---------------- CANDLE GENERATION ---------------- */
 function randomCandle(prevClose) {
   const vol = 1.5;
   const open = prevClose;
@@ -223,17 +216,17 @@ function stepCandle() {
 }
 
 function updateCandleInfo(c) {
-  oVal.textContent = c.o;
-  hVal.textContent = c.h;
-  lVal.textContent = c.l;
-  cVal.textContent = c.c;
+  document.getElementById("oVal").textContent = c.o;
+  document.getElementById("hVal").textContent = c.h;
+  document.getElementById("lVal").textContent = c.l;
+  document.getElementById("cVal").textContent = c.c;
 }
 
 function updatePrice() {
-  priceSpan.textContent = currentPrice.toFixed(2);
+  document.getElementById("price").textContent = currentPrice.toFixed(2);
 }
 
-// ---------------- CHART ----------------
+/* ---------------- CHART ---------------- */
 function drawChart() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -267,14 +260,12 @@ function drawChart() {
 
     const color = close >= open ? "#22c55e" : "#ef4444";
 
-    // wick
     ctx.strokeStyle = color;
     ctx.beginPath();
     ctx.moveTo(x, yHigh);
     ctx.lineTo(x, yLow);
     ctx.stroke();
 
-    // body
     const top = Math.min(yOpen, yClose);
     const bottom = Math.max(yOpen, yClose);
     ctx.fillStyle = color;
@@ -286,10 +277,10 @@ function drawChart() {
   }
 }
 
-// ---------------- TRADING ----------------
+/* ---------------- TRADING ---------------- */
 function updateUnrealized() {
   const unreal = shares * (currentPrice - avgCost);
-  unrealizedSpan.textContent = unreal.toFixed(2);
+  document.getElementById("unrealized").textContent = unreal.toFixed(2);
 }
 
 function buy() {
@@ -298,7 +289,7 @@ function buy() {
 
   const cost = qty * currentPrice;
   if (cost > balance) {
-    statusDiv.textContent = "Not enough balance.";
+    status("Not enough balance.");
     return;
   }
 
@@ -310,7 +301,7 @@ function buy() {
 
   saveBalance();
   updatePosition();
-  statusDiv.textContent = `Bought ${qty} @ $${currentPrice.toFixed(2)}`;
+  status(`Bought ${qty} @ $${currentPrice.toFixed(2)}`);
 }
 
 function sell() {
@@ -318,7 +309,7 @@ function sell() {
   if (!qty || qty <= 0) return;
 
   if (qty > shares) {
-    statusDiv.textContent = "Not enough shares.";
+    status("Not enough shares.");
     return;
   }
 
@@ -330,22 +321,26 @@ function sell() {
 
   saveBalance();
   updatePosition();
-  statusDiv.textContent = `Sold ${qty} @ $${currentPrice.toFixed(2)}`;
+  status(`Sold ${qty} @ $${currentPrice.toFixed(2)}`);
 }
 
 function updatePosition() {
-  sharesSpan.textContent = shares;
-  avgCostSpan.textContent = avgCost.toFixed(2);
+  document.getElementById("shares").textContent = shares;
+  document.getElementById("avgCost").textContent = avgCost.toFixed(2);
   updateUnrealized();
 }
 
-// ---------------- EVENTS ----------------
+function status(msg) {
+  document.getElementById("status").textContent = msg;
+}
+
+/* ---------------- EVENTS ---------------- */
 document.getElementById("buyBtn").onclick = buy;
 document.getElementById("sellBtn").onclick = sell;
 document.getElementById("nextBtn").onclick = stepCandle;
 
-// ---------------- INIT ----------------
-initBalance();
+/* ---------------- INIT ---------------- */
+loadBalance();
 stepCandle();
 </script>
 
