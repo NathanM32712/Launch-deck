@@ -33,7 +33,7 @@
     background:#15152a;
     padding:20px;
     border-radius:12px;
-    width:500px;
+    width:520px;
     text-align:center;
     box-shadow:0 0 20px rgba(0,0,0,0.6);
   }
@@ -48,7 +48,7 @@
   }
 
   input {
-    width:120px;
+    width:150px;
     padding:8px;
     border-radius:6px;
     border:none;
@@ -58,7 +58,7 @@
   }
 
   button {
-    width:200px;
+    width:220px;
     padding:12px;
     background:#4ecca3;
     border:none;
@@ -153,14 +153,33 @@ function saveBalance() {
   updateBalance();
 }
 
-/* ---------------- SLOT MACHINE ---------------- */
-const symbols = ["🍒","🍋","🔔","⭐","7️⃣","🍇","💎"];
+/* ---------------- SYMBOLS + RARITY ---------------- */
+const weightedSymbols = [
+  {sym:"⭐", w:2},
+  {sym:"🍇", w:2},
+  {sym:"🍒", w:4},
+  {sym:"💎", w:1},
+  {sym:"🔔", w:4},
+  {sym:"🍋", w:6},
+  {sym:"💣", w:8}
+];
+
+function pickSymbol() {
+  let total = weightedSymbols.reduce((a,b)=>a+b.w,0);
+  let r = Math.random() * total;
+
+  for (let s of weightedSymbols) {
+    if (r < s.w) return s.sym;
+    r -= s.w;
+  }
+  return "🍋";
+}
+
+/* ---------------- BOARD SETUP ---------------- */
 const rows = 3;
 const cols = 5;
-
 const board = document.getElementById("slots");
 
-// create grid
 for (let i = 0; i < rows * cols; i++) {
   const cell = document.createElement("div");
   cell.className = "cell";
@@ -168,16 +187,13 @@ for (let i = 0; i < rows * cols; i++) {
   board.appendChild(cell);
 }
 
-function randomSymbol() {
-  return symbols[Math.floor(Math.random() * symbols.length)];
-}
-
+/* ---------------- SPIN ANIMATION ---------------- */
 function spinAnimation(callback) {
   let ticks = 20;
   const cells = document.querySelectorAll(".cell");
 
   const interval = setInterval(() => {
-    cells.forEach(c => c.textContent = randomSymbol());
+    cells.forEach(c => c.textContent = pickSymbol());
     ticks--;
     if (ticks <= 0) {
       clearInterval(interval);
@@ -186,6 +202,7 @@ function spinAnimation(callback) {
   }, 60);
 }
 
+/* ---------------- FINAL SPIN ---------------- */
 function finalSpin() {
   const grid = [];
   const cells = document.querySelectorAll(".cell");
@@ -193,7 +210,7 @@ function finalSpin() {
   for (let r = 0; r < rows; r++) {
     grid[r] = [];
     for (let c = 0; c < cols; c++) {
-      const sym = randomSymbol();
+      const sym = pickSymbol();
       grid[r][c] = sym;
       cells[r * cols + c].textContent = sym;
     }
@@ -202,9 +219,22 @@ function finalSpin() {
   return grid;
 }
 
-function checkWins(grid, bet) {
+/* ---------------- PAYOUT LOGIC ---------------- */
+function calculateWin(grid, bet) {
   let totalWin = 0;
+  let symbolCounts = {};
+  let bombs = 0;
 
+  // Count all symbols
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      let s = grid[r][c];
+      if (s === "💣") bombs++;
+      symbolCounts[s] = (symbolCounts[s] || 0) + 1;
+    }
+  }
+
+  // Check horizontal wins
   for (let r = 0; r < rows; r++) {
     let row = grid[r];
     let streak = 1;
@@ -213,13 +243,29 @@ function checkWins(grid, bet) {
       if (row[c] === row[c-1]) {
         streak++;
       } else {
-        if (streak >= 3) totalWin += bet * streak;
+        if (streak >= 3) {
+          let sym = row[c-1];
+          let base = bet * 3;
+          let extra = symbolCounts[sym] - 3;
+          let final = Math.pow(base, extra + 1);
+          totalWin += final;
+        }
         streak = 1;
       }
     }
 
-    if (streak >= 3) totalWin += bet * streak;
+    if (streak >= 3) {
+      let sym = row[cols-1];
+      let base = bet * 3;
+      let extra = symbolCounts[sym] - 3;
+      let final = Math.pow(base, extra + 1);
+      totalWin += final;
+    }
   }
+
+  // Bomb penalty
+  let penalty = bombs * bet;
+  totalWin -= penalty;
 
   return totalWin;
 }
@@ -245,13 +291,13 @@ document.getElementById("spinBtn").onclick = () => {
 
   spinAnimation(() => {
     const grid = finalSpin();
-    const win = checkWins(grid, bet);
+    const win = calculateWin(grid, bet);
 
     balance += win;
     saveBalance();
 
     if (win > 0) {
-      resultDiv.innerHTML = `<span style="color:#4ecca3;">WIN!</span> +$${win}`;
+      resultDiv.innerHTML = `<span style="color:#4ecca3;">WIN!</span> +$${win.toLocaleString()}`;
     } else {
       resultDiv.innerHTML = `<span style="color:#ff4d4d;">LOSS</span>`;
     }
