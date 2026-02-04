@@ -1,252 +1,213 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Plinko Pyramid</title>
-  <link rel="icon" type="image/png" href="../icon.png" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body {
-      margin: 0;
-      background: #021a30;
-      color: #cfefff;
-      font-family: sans-serif;
-      text-align: center;
-    }
-    canvas {
-      display: block;
-      margin: 20px auto;
-      border: 2px solid #0a3d66;
-      background: #031f3a;
-    }
-    input, button {
-      margin: 6px;
-      padding: 6px 12px;
-      font-size: 16px;
-      border-radius: 6px;
-      border: none;
-    }
-    #dropBtn {
-      background: #48b0ff;
-      color: #001;
-      font-weight: bold;
-    }
-    #backBtn {
-      background: #0a3d66;
-      color: #fff;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Plinko</title>
+
+<!-- Correct favicon -->
+<link rel="icon" type="image/png" href="../icon.png">
+
+<style>
+  body {
+    background:#0f0f1a;
+    color:white;
+    font-family:Arial;
+    display:flex;
+    justify-content:center;
+    padding-top:60px;
+  }
+
+  /* Back button */
+  .back-btn {
+    position:fixed;
+    top:10px;
+    left:10px;
+    width:40px;
+    height:40px;
+    background-image:url('../icon.png');
+    background-size:contain;
+    background-repeat:no-repeat;
+    background-position:center;
+    cursor:pointer;
+    z-index:9999;
+  }
+
+  .game {
+    background:#1a1a2e;
+    padding:20px;
+    border-radius:12px;
+    width:420px;
+    text-align:center;
+    box-shadow:0 0 20px rgba(0,0,0,0.5);
+  }
+
+  input {
+    width:140px;
+    padding:8px;
+    margin:6px;
+    border-radius:6px;
+    border:none;
+    background:#0f0f1a;
+    color:white;
+    font-size:16px;
+  }
+
+  button {
+    width:200px;
+    padding:12px;
+    background:#4ecca3;
+    border:none;
+    border-radius:10px;
+    font-size:20px;
+    font-weight:bold;
+    cursor:pointer;
+    margin-top:10px;
+    transition:0.15s;
+  }
+
+  button:active {
+    transform:scale(0.97);
+    background:#3ba987;
+  }
+
+  .slots {
+    margin-top:20px;
+    display:flex;
+    justify-content:space-between;
+    font-size:14px;
+  }
+
+  .slot {
+    width:40px;
+    text-align:center;
+  }
+
+  #result {
+    margin-top:20px;
+    font-size:22px;
+    min-height:30px;
+  }
+</style>
 </head>
 <body>
-  <canvas id="plinkoCanvas" width="600" height="700"></canvas>
-  <div>
-    <div id="balance">Balance: $1000.00</div>
-    <input id="betInput" type="number" value="10" min="1" />
-    <button id="dropBtn">Drop</button>
-    <button id="backBtn">Home</button>
+
+<a class="back-btn" href="../launch-deck.html"></a>
+
+<div class="game">
+  <h1>Plinko</h1>
+
+  <div>Balance: $<span id="balance">0</span></div>
+
+  <input type="number" id="bet" placeholder="Bet" min="1">
+
+  <button id="dropBtn">DROP</button>
+
+  <div class="slots">
+    <div class="slot">0.1x</div>
+    <div class="slot">0.5x</div>
+    <div class="slot">1x</div>
+    <div class="slot">3x</div>
+    <div class="slot">5x</div>
+    <div class="slot">3x</div>
+    <div class="slot">1x</div>
+    <div class="slot">0.5x</div>
+    <div class="slot">0.1x</div>
   </div>
 
-  <script>
-    const canvas = document.getElementById('plinkoCanvas');
-    const ctx = canvas.getContext('2d');
-    const pegRows = 12;
-    const BALL_R = 10;
-    const gravity = 0.25;
-    const pegSpacing = 40;
-    const boxCount = 11;
-    const pegs = [];
-    let balls = [];
+  <div id="result"></div>
+</div>
 
-    const BALANCE_KEY = 'slotsBalance';
+<script>
+// ---------------- COOKIE HELPERS ----------------
+function setCookie(name, value, days) {
+  const d = new Date();
+  d.setTime(d.getTime() + (days*24*60*60*1000));
+  document.cookie = name + "=" + encodeURIComponent(value) + ";expires=" + d.toUTCString() + ";path=/";
+}
 
-    function getBalance() {
-      return parseFloat(localStorage.getItem(BALANCE_KEY)) || 1000;
-    }
+function getCookie(name) {
+  const cname = name + "=";
+  const arr = decodeURIComponent(document.cookie).split(";");
+  for (let c of arr) {
+    c = c.trim();
+    if (c.indexOf(cname) === 0) return c.substring(cname.length);
+  }
+  return null;
+}
 
-    function updateBalance(amount) {
-      const newBalance = getBalance() + amount;
-      localStorage.setItem(BALANCE_KEY, newBalance.toFixed(2));
-      document.getElementById('balance').textContent = `Balance: $${newBalance.toFixed(2)}`;
-    }
+// ---------------- BALANCE ----------------
+let balance = 0;
 
-    function setupPegs() {
-      pegs.length = 0;
-      const baseY = 80;
-      for (let row = 1; row < pegRows; row++) {
-        for (let col = 0; col <= row; col++) {
-          const x = canvas.width / 2 + (col - row / 2) * pegSpacing;
-          const y = baseY + row * pegSpacing;
-          pegs.push({ x, y, isBox: false });
-        }
-      }
-    }
+function initBalance() {
+  const stored = getCookie("balance");
+  balance = stored && !isNaN(stored) ? parseInt(stored) : 1000;
+  saveBalance();
+}
 
-    function drawBoard() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+function saveBalance() {
+  setCookie("balance", balance, 365);
+  document.getElementById("balance").textContent = balance;
+}
 
-      const centerIndex = Math.floor(boxCount / 2);
-      const startX = canvas.width / 2 - (boxCount - 1) * pegSpacing / 2;
-      const boxY = canvas.height - 40;
+// ---------------- PLINKO LOGIC ----------------
 
-      for (let i = 0; i < boxCount; i++) {
-        const x = startX + i * pegSpacing;
-        const steps = Math.abs(i - centerIndex);
-        const multiplier = parseFloat((0.2 * Math.pow(1.75, steps)).toFixed(2));
+// multipliers (center = 5)
+const multipliers = [0.1, 0.5, 1, 3, 5, 3, 1, 0.5, 0.1];
 
-        ctx.fillStyle = '#0a3d66';
-        ctx.fillRect(x - 15, boxY, 30, 30);
-        ctx.strokeStyle = '#48b0ff';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x - 15, boxY, 30, 30);
+// rarity weights (center rare)
+const weights = [
+  30, // 0.1
+  20, // 0.5
+  15, // 1
+  8,  // 3
+  2,  // 5 (center)
+  8,  // 3
+  15, // 1
+  20, // 0.5
+  30  // 0.1
+];
 
-        ctx.fillStyle = '#cfefff';
-        ctx.font = '14px sans-serif';
-        ctx.fillText(`${multiplier}×`, x - 16, boxY - 12);
+function dropPlinko() {
+  const total = weights.reduce((a,b)=>a+b,0);
+  let r = Math.random() * total;
 
-        pegs.push({ x, y: boxY, multiplier, isBox: true });
-      }
+  for (let i = 0; i < weights.length; i++) {
+    if (r < weights[i]) return i;
+    r -= weights[i];
+  }
+  return 4; // fallback center
+}
 
-      pegs.filter(p => !p.isBox).forEach(p => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
-        ctx.fillStyle = '#48b0ff';
-        ctx.fill();
-      });
+// ---------------- GAME ----------------
+document.getElementById("dropBtn").onclick = () => {
+  const bet = parseFloat(document.getElementById("bet").value);
+  const resultDiv = document.getElementById("result");
 
-      balls.forEach(ball => {
-        ctx.beginPath();
-        ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2);
-        ctx.fillStyle = '#00aaff';
-        ctx.fill();
-      });
-    }
+  if (!bet || bet <= 0) {
+    resultDiv.textContent = "Enter a valid bet.";
+    return;
+  }
+  if (bet > balance) {
+    resultDiv.textContent = "Not enough balance.";
+    return;
+  }
 
-    function dropBall(bet) {
-      const currentBalance = getBalance();
-      if (bet > 0 && bet <= currentBalance) {
-        updateBalance(-bet);
-        const offset = Math.floor(Math.random() * 9) + 1;
-        balls.push({
-          x: canvas.width / 2 + (Math.random() < 0.5 ? -offset : offset),
-          y: 0,
-          vx: 0,
-          vy: 0,
-          bet: bet,
-          active: true
-        });
-      }
-    }
+  balance -= bet;
+  saveBalance();
 
-    function updateBalls() {
-      balls.forEach(ball => {
-        if (!ball.active) return;
+  const slot = dropPlinko();
+  const mult = multipliers[slot];
+  const win = bet * mult;
 
-        ball.vy += gravity;
-        ball.x += ball.vx;
-        ball.y += ball.vy;
+  balance += win;
+  saveBalance();
 
-        pegs.filter(p => !p.isBox).forEach(p => {
-          const dx = ball.x - p.x;
-          const dy = ball.y - p.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < BALL_R + 5) {
-            const angle = Math.atan2(dy, dx);
-            const overlap = BALL_R + 5 - dist;
-            ball.x += Math.cos(angle) * overlap;
-            ball.y += Math.sin(angle) * overlap;
-            ball.vx += Math.cos(angle) * 0.4;
-            ball.vy = -Math.abs(ball.vy) * 0.3;
-          }
-        });
+  resultDiv.textContent = `Landed on ${mult}x — You won $${win.toFixed(2)}`;
+};
 
-        if (ball.x < BALL_R || ball.x > canvas.width - BALL_R) {
-          ball.vx *= -0.6;
-          ball.x = Math.max(BALL_R, Math.min(canvas.width - BALL_R, ball.x));
-        }
+// ---------------- INIT ----------------
+initBalance();
+</script>
 
-        if (ball.y > canvas.height - 60) {
-          ball.active = false;
-          const boxes = pegs.filter(p => p.isBox);
-          let closest = boxes[0];
-          let minDist = Math.abs(ball.x - closest.x);
-          for (let p of boxes) {
-            const d = Math.abs(ball.x - p.x);
-            if (d < minDist) {
-              minDist = d;
-              closest = p;
-            }
-          }
-          const payout = parseFloat((ball.bet * closest.multiplier).toFixed(2));
-          updateBalance(payout);
-        }
-      });
-
-      balls = balls.filter(ball => ball.active);
-    }
-
-    function gameLoop() {
-      updateBalls();
-      drawBoard();
-      requestAnimationFrame(gameLoop);
-    }
-
-    document.getElementById('dropBtn').onclick = () => {
-      const bet = parseFloat(document.getElementById('betInput').value);
-      dropBall(bet);
-    };
-
-    document.getElementById('backBtn').onclick = () => {
-      window.location.href = 'home.html';
-    };
-
-    let spamInterval = null;
-    let spamTimeout = null;
-
-    function startSpam(bet) {
-      spamTimeout = setTimeout(() => {
-        spamInterval = setInterval(() => {
-          dropBall(bet);
-        }, 0);
-      }, 1000);
-    }
-
-    function stopSpam() {
-      clearTimeout(spamTimeout);
-      clearInterval(spamInterval);
-      spamTimeout = null;
-      spamInterval = null;
-    }
-
-    const dropBtn = document.getElementById('dropBtn');
-    dropBtn.addEventListener('mousedown', () => {
-      const bet = parseFloat(document.getElementById('betInput').value);
-      dropBall(bet);
-      startSpam(bet);
-    });
-    dropBtn.addEventListener('mouseup', stopSpam);
-    dropBtn.addEventListener('mouseleave', stopSpam);
-
-    let spaceHeld = false;
-    document.addEventListener('keydown', e => {
-      if (e.code === 'Space' && !spaceHeld) {
-        spaceHeld = true;
-        const bet = parseFloat(document.getElementById('betInput').value);
-        dropBall(bet);
-        startSpam(bet);
-      }
-    });
-    document.addEventListener('keyup', e => {
-      if (e.code === 'Space') {
-        spaceHeld = false;
-        stopSpam();
-      }
-    });
-
-    setupPegs();
-    drawBoard();
-    updateBalance(0);
-    gameLoop();
-  </script>
 </body>
-
 </html>
