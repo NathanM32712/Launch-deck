@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Slots</title>
+<link rel="icon" type="image/png" href="../icon.png">
+
+<style>
+  body {
+    background:#0b0b16;
+    color:white;
+    font-family:Arial, sans-serif;
+    display:flex;
+    justify-content:center;
+    padding-top:60px;
+  }
+
+  .back-btn {
+    position:fixed;
+    top:10px;
+    left:10px;
+    width:40px;
+    height:40px;
+    background-image:url('../icon.png');
+    background-size:contain;
+    background-repeat:no-repeat;
+    background-position:center;
+    cursor:pointer;
+    z-index:9999;
+  }
+
+  .game {
+    background:#15152a;
+    padding:20px;
+    border-radius:12px;
+    width:500px;
+    text-align:center;
+    box-shadow:0 0 20px rgba(0,0,0,0.6);
+  }
+
+  h1 {
+    margin-top:0;
+  }
+
+  .balance {
+    margin-bottom:10px;
+    font-size:18px;
+  }
+
+  input {
+    width:120px;
+    padding:8px;
+    border-radius:6px;
+    border:none;
+    background:#0b0b16;
+    color:white;
+    margin-bottom:10px;
+  }
+
+  button {
+    width:200px;
+    padding:12px;
+    background:#4ecca3;
+    border:none;
+    border-radius:10px;
+    font-size:20px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.15s;
+  }
+
+  button:active {
+    transform:scale(0.97);
+    background:#3ba987;
+  }
+
+  #slots {
+    margin-top:20px;
+    display:grid;
+    grid-template-columns:repeat(5, 1fr);
+    grid-template-rows:repeat(3, 80px);
+    gap:10px;
+  }
+
+  .cell {
+    background:#0f0f1a;
+    border-radius:10px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:40px;
+    transition:0.1s;
+  }
+
+  #result {
+    margin-top:20px;
+    font-size:20px;
+    min-height:30px;
+  }
+</style>
+</head>
+<body>
+
+<a class="back-btn" href="../launch-deck.html"></a>
+
+<div class="game">
+  <h1>Slots</h1>
+
+  <div class="balance">Balance: $<span id="balance">0</span></div>
+
+  <input type="number" id="bet" placeholder="Bet" min="1"><br>
+
+  <button id="spinBtn">SPIN</button>
+
+  <div id="slots"></div>
+
+  <div id="result"></div>
+</div>
+
+<script>
+/* ---------------- COOKIE HELPERS ---------------- */
+function setCookie(name, value, days) {
+  const d = new Date();
+  d.setTime(d.getTime() + (days*24*60*60*1000));
+  document.cookie = name + "=" + encodeURIComponent(value) + ";expires=" + d.toUTCString() + ";path=/";
+}
+
+function getCookie(name) {
+  const cname = name + "=";
+  const arr = decodeURIComponent(document.cookie).split(";");
+  for (let c of arr) {
+    c = c.trim();
+    if (c.indexOf(cname) === 0) return c.substring(cname.length);
+  }
+  return null;
+}
+
+/* ---------------- BALANCE ---------------- */
+let balance = 0;
+
+function loadBalance() {
+  const stored = getCookie("balance");
+  balance = stored && !isNaN(stored) ? parseInt(stored) : 0;
+  updateBalance();
+}
+
+function updateBalance() {
+  document.getElementById("balance").textContent = balance;
+}
+
+function saveBalance() {
+  setCookie("balance", balance, 365);
+  updateBalance();
+}
+
+/* ---------------- SLOT MACHINE ---------------- */
+const symbols = ["🍒","🍋","🔔","⭐","7️⃣","🍇","💎"];
+const rows = 3;
+const cols = 5;
+
+const board = document.getElementById("slots");
+
+// create grid
+for (let i = 0; i < rows * cols; i++) {
+  const cell = document.createElement("div");
+  cell.className = "cell";
+  cell.textContent = "❔";
+  board.appendChild(cell);
+}
+
+function randomSymbol() {
+  return symbols[Math.floor(Math.random() * symbols.length)];
+}
+
+function spinAnimation(callback) {
+  let ticks = 20;
+  const cells = document.querySelectorAll(".cell");
+
+  const interval = setInterval(() => {
+    cells.forEach(c => c.textContent = randomSymbol());
+    ticks--;
+    if (ticks <= 0) {
+      clearInterval(interval);
+      callback();
+    }
+  }, 60);
+}
+
+function finalSpin() {
+  const grid = [];
+  const cells = document.querySelectorAll(".cell");
+
+  for (let r = 0; r < rows; r++) {
+    grid[r] = [];
+    for (let c = 0; c < cols; c++) {
+      const sym = randomSymbol();
+      grid[r][c] = sym;
+      cells[r * cols + c].textContent = sym;
+    }
+  }
+
+  return grid;
+}
+
+function checkWins(grid, bet) {
+  let totalWin = 0;
+
+  for (let r = 0; r < rows; r++) {
+    let row = grid[r];
+    let streak = 1;
+
+    for (let c = 1; c < cols; c++) {
+      if (row[c] === row[c-1]) {
+        streak++;
+      } else {
+        if (streak >= 3) totalWin += bet * streak;
+        streak = 1;
+      }
+    }
+
+    if (streak >= 3) totalWin += bet * streak;
+  }
+
+  return totalWin;
+}
+
+/* ---------------- GAME LOGIC ---------------- */
+document.getElementById("spinBtn").onclick = () => {
+  const bet = parseFloat(document.getElementById("bet").value);
+  const resultDiv = document.getElementById("result");
+
+  if (!bet || bet <= 0) {
+    resultDiv.textContent = "Enter a valid bet.";
+    return;
+  }
+  if (bet > balance) {
+    resultDiv.textContent = "Not enough balance.";
+    return;
+  }
+
+  balance -= bet;
+  saveBalance();
+
+  resultDiv.textContent = "Spinning...";
+
+  spinAnimation(() => {
+    const grid = finalSpin();
+    const win = checkWins(grid, bet);
+
+    balance += win;
+    saveBalance();
+
+    if (win > 0) {
+      resultDiv.innerHTML = `<span style="color:#4ecca3;">WIN!</span> +$${win}`;
+    } else {
+      resultDiv.innerHTML = `<span style="color:#ff4d4d;">LOSS</span>`;
+    }
+  });
+};
+
+/* ---------------- INIT ---------------- */
+loadBalance();
+</script>
+
+</body>
+</html>
