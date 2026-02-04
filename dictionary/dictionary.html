@@ -27,7 +27,7 @@
 
 <h2>Dictionary Search</h2>
 
-<!-- User can still upload extra .txt files -->
+<!-- Optional: user can still upload extra .txt files -->
 <input type="file" id="fileInput" accept=".txt" multiple>
 <br><br>
 
@@ -37,23 +37,15 @@
 <script>
 let lines = [];
 
-// List of built-in dictionary files in the same folder
-const builtInFiles = [
-    "dictionary1.txt",
-    "dictionary2.txt",
-    "dictionary3.txt"
-];
-
-// Load built-in dictionary files automatically
-function loadBuiltInFiles() {
-    builtInFiles.forEach(file => {
-        fetch(file)
-            .then(r => r.text())
-            .then(t => {
-                lines.push(...t.split(/\r?\n/));
-            })
-            .catch(err => console.log("Missing file:", file));
-    });
+// Load dictionary.txt automatically
+function loadMainDictionary() {
+    fetch("dictionary.txt")
+        .then(r => r.text())
+        .then(t => {
+            lines.push(...t.split(/\r?\n/));
+            console.log("Loaded dictionary.txt");
+        })
+        .catch(err => console.log("dictionary.txt not found"));
 }
 
 // Load user-selected files
@@ -100,8 +92,8 @@ function search() {
     document.getElementById("results").innerHTML = resultsHTML || "No matches found.";
 }
 
-// Start by loading built-in files
-loadBuiltInFiles();
+// Load dictionary.txt on startup
+loadMainDictionary();
 </script>
 
 </body>
