@@ -2,107 +2,105 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Blackjack</title>
+<title>Candle Market Simulator</title>
 
 <!-- Correct favicon -->
 <link rel="icon" type="image/png" href="../icon.png">
 
 <style>
   body {
-    font-family: Arial, sans-serif;
-    background: #0b0b16;
-    color: #f5f5f5;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    min-height: 100vh;
-    padding: 40px 20px;
+    background:#0b1220;
+    color:#f9fafb;
+    font-family:Arial, sans-serif;
+    display:flex;
+    justify-content:center;
+    padding-top:60px;
   }
 
   /* Back button */
   .back-btn {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    width: 40px;
-    height: 40px;
-    background-image: url('../icon.png');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    cursor: pointer;
-    z-index: 9999;
+    position:fixed;
+    top:10px;
+    left:10px;
+    width:40px;
+    height:40px;
+    background-image:url('../icon.png');
+    background-size:contain;
+    background-repeat:no-repeat;
+    background-position:center;
+    cursor:pointer;
+    z-index:9999;
   }
 
-  .game {
-    background: #15152a;
-    border-radius: 12px;
-    padding: 20px;
-    max-width: 600px;
-    width: 100%;
-    box-shadow: 0 0 20px rgba(0,0,0,0.6);
+  .app {
+    background:#020617;
+    padding:20px;
+    border-radius:10px;
+    width:900px;
+    box-shadow:0 0 20px rgba(0,0,0,0.6);
   }
 
   h1 {
-    text-align: center;
-    margin-top: 0;
+    text-align:center;
+    margin-top:0;
+  }
+
+  .top {
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    margin-bottom:10px;
   }
 
   .balance {
-    font-size: 1.1em;
-    margin-bottom: 10px;
-    text-align: center;
+    font-size:1.1em;
   }
 
-  .row {
-    margin-bottom: 10px;
-    text-align: center;
+  .controls {
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:10px;
   }
 
-  input[type="number"] {
-    width: 100px;
-    padding: 6px;
-    border-radius: 6px;
-    border: none;
-    background: #0b0b16;
-    color: white;
+  input {
+    background:#0b1220;
+    border:1px solid #334155;
+    color:white;
+    padding:6px;
+    border-radius:6px;
+    width:100px;
   }
 
   button {
-    padding: 10px 16px;
-    margin: 5px;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    background: #4ecca3;
-    color: #051923;
-    font-weight: bold;
+    background:#4ecca3;
+    border:none;
+    padding:8px 14px;
+    border-radius:6px;
+    font-weight:bold;
+    cursor:pointer;
+    color:#022c22;
   }
 
-  button:disabled {
-    background: #555;
-    cursor: default;
+  button.sell {
+    background:#f97316;
+    color:#451a03;
   }
 
-  .section {
-    background: #101020;
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 10px;
+  canvas {
+    width:100%;
+    background:#020617;
+    border-radius:6px;
   }
 
-  .cards span {
-    display: inline-block;
-    padding: 6px 10px;
-    margin-right: 6px;
-    background: #202040;
-    border-radius: 4px;
+  .info {
+    margin-top:10px;
+    font-size:0.9em;
   }
 
   .status {
-    margin-top: 12px;
-    min-height: 24px;
-    text-align: center;
+    margin-top:10px;
+    min-height:20px;
   }
 </style>
 </head>
@@ -110,33 +108,33 @@
 
 <a class="back-btn" href="../launch-deck.html"></a>
 
-<div class="game">
-  <h1>Blackjack</h1>
+<div class="app">
+  <h1>Candle Market Simulator</h1>
 
-  <div class="balance">
-    Balance: $<span id="balance">0</span>
+  <div class="top">
+    <div class="balance">Balance: $<span id="balance">0</span></div>
+    <div>
+      Shares: <span id="shares">0</span> |
+      Avg Cost: $<span id="avgCost">0</span> |
+      Unrealized: $<span id="unrealized">0</span>
+    </div>
   </div>
 
-  <div class="row">
-    Bet: <input type="number" id="bet" min="1" value="10">
-    <button id="dealBtn">Deal</button>
+  <div class="controls">
+    <div>Price: $<span id="price">0</span></div>
+    <input type="number" id="qty" value="10" min="1">
+    <button id="buyBtn">Buy</button>
+    <button id="sellBtn" class="sell">Sell</button>
+    <button id="nextBtn">Next Candle</button>
   </div>
 
-  <div class="section">
-    <h3>Dealer</h3>
-    <div class="cards" id="dealerCards"></div>
-    <div>Total: <span id="dealerTotal">0</span></div>
-  </div>
+  <canvas id="chart" width="900" height="300"></canvas>
 
-  <div class="section">
-    <h3>Player</h3>
-    <div class="cards" id="playerCards"></div>
-    <div>Total: <span id="playerTotal">0</span></div>
-  </div>
-
-  <div class="row">
-    <button id="hitBtn" disabled>Hit</button>
-    <button id="standBtn" disabled>Stand</button>
+  <div class="info">
+    O: <span id="oVal">0</span> |
+    H: <span id="hVal">0</span> |
+    L: <span id="lVal">0</span> |
+    C: <span id="cVal">0</span>
   </div>
 
   <div class="status" id="status"></div>
@@ -170,7 +168,7 @@ function loadBalance() {
 }
 
 function updateBalance() {
-  document.getElementById("balance").textContent = balance;
+  document.getElementById("balance").textContent = balance.toFixed(2);
 }
 
 function saveBalance() {
@@ -178,171 +176,172 @@ function saveBalance() {
   updateBalance();
 }
 
-/* ---------------- GAME LOGIC ---------------- */
-let deck = [];
-let player = [];
-let dealer = [];
-let inRound = false;
-let currentBet = 0;
+/* ---------------- STATE ---------------- */
+let candles = [];
+let currentPrice = 100;
+let shares = 0;
+let avgCost = 0;
 
-function createDeck() {
-  const suits = ["♠","♥","♦","♣"];
-  const ranks = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
-  const d = [];
-  for (let s of suits) {
-    for (let r of ranks) d.push({rank:r, suit:s});
-  }
-  return d;
+const canvas = document.getElementById("chart");
+const ctx = canvas.getContext("2d");
+
+/* ---------------- CANDLE GENERATION ---------------- */
+function randomCandle(prevClose) {
+  const vol = 1.5;
+  const open = prevClose;
+  const move = (Math.random() - 0.5) * vol * 2;
+  const close = Math.max(1, open + move);
+
+  const high = Math.max(open, close) + Math.random() * vol;
+  const low = Math.max(1, Math.min(open, close) - Math.random() * vol);
+
+  return {
+    o: open.toFixed(2),
+    h: high.toFixed(2),
+    l: low.toFixed(2),
+    c: close.toFixed(2)
+  };
 }
 
-function shuffle(a) {
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
+function stepCandle() {
+  const prev = candles.length ? parseFloat(candles[candles.length - 1].c) : currentPrice;
+  const c = randomCandle(prev);
+  candles.push(c);
+  currentPrice = parseFloat(c.c);
+
+  updateCandleInfo(c);
+  updatePrice();
+  updateUnrealized();
+  drawChart();
 }
 
-function dealCard(hand) {
-  if (deck.length === 0) deck = shuffle(createDeck());
-  hand.push(deck.pop());
+function updateCandleInfo(c) {
+  document.getElementById("oVal").textContent = c.o;
+  document.getElementById("hVal").textContent = c.h;
+  document.getElementById("lVal").textContent = c.l;
+  document.getElementById("cVal").textContent = c.c;
 }
 
-function handValue(hand) {
-  let total = 0;
-  let aces = 0;
-
-  for (let c of hand) {
-    if (c.rank === "A") {
-      aces++;
-      total += 11;
-    } else if (["K","Q","J"].includes(c.rank)) {
-      total += 10;
-    } else {
-      total += parseInt(c.rank);
-    }
-  }
-
-  while (total > 21 && aces > 0) {
-    total -= 10;
-    aces--;
-  }
-
-  return total;
+function updatePrice() {
+  document.getElementById("price").textContent = currentPrice.toFixed(2);
 }
 
-function renderHand(hand, element, hideFirst=false) {
-  element.innerHTML = "";
-  hand.forEach((c, i) => {
-    const span = document.createElement("span");
-    span.textContent = hideFirst && i === 0 ? "🂠" : c.rank + c.suit;
-    element.appendChild(span);
+/* ---------------- CHART ---------------- */
+function drawChart() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!candles.length) return;
+
+  const padding = 20;
+  const w = canvas.width;
+  const h = canvas.height;
+
+  const lows = candles.map(c => parseFloat(c.l));
+  const highs = candles.map(c => parseFloat(c.h));
+
+  const minPrice = Math.min(...lows);
+  const maxPrice = Math.max(...highs);
+  const range = maxPrice - minPrice || 1;
+
+  const candleWidth = Math.max(6, (w - padding * 2) / candles.length);
+
+  candles.forEach((c, i) => {
+    const open = parseFloat(c.o);
+    const close = parseFloat(c.c);
+    const high = parseFloat(c.h);
+    const low = parseFloat(c.l);
+
+    const x = padding + i * candleWidth + candleWidth / 2;
+
+    const yHigh = map(high);
+    const yLow = map(low);
+    const yOpen = map(open);
+    const yClose = map(close);
+
+    const color = close >= open ? "#22c55e" : "#ef4444";
+
+    ctx.strokeStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x, yHigh);
+    ctx.lineTo(x, yLow);
+    ctx.stroke();
+
+    const top = Math.min(yOpen, yClose);
+    const bottom = Math.max(yOpen, yClose);
+    ctx.fillStyle = color;
+    ctx.fillRect(x - candleWidth / 2 + 1, top, candleWidth - 2, bottom - top);
   });
+
+  function map(price) {
+    return h - padding - ((price - minPrice) / range) * (h - padding * 2);
+  }
 }
 
-/* ---------------- ROUND CONTROL ---------------- */
-function startRound() {
-  if (inRound) return;
+/* ---------------- TRADING ---------------- */
+function updateUnrealized() {
+  const unreal = shares * (currentPrice - avgCost);
+  document.getElementById("unrealized").textContent = unreal.toFixed(2);
+}
 
-  const bet = parseInt(document.getElementById("bet").value);
-  if (!bet || bet <= 0) {
-    status("Enter a valid bet.");
-    return;
-  }
-  if (bet > balance) {
+function buy() {
+  const qty = parseInt(document.getElementById("qty").value);
+  if (!qty || qty <= 0) return;
+
+  const cost = qty * currentPrice;
+  if (cost > balance) {
     status("Not enough balance.");
     return;
   }
 
-  currentBet = bet;
-  balance -= bet;
-  saveBalance();
+  balance -= cost;
 
-  inRound = true;
-  player = [];
-  dealer = [];
-  deck = shuffle(createDeck());
-
-  dealCard(player);
-  dealCard(dealer);
-  dealCard(player);
-  dealCard(dealer);
-
-  renderHand(player, document.getElementById("playerCards"));
-  renderHand(dealer, document.getElementById("dealerCards"), true);
-
-  document.getElementById("playerTotal").textContent = handValue(player);
-  document.getElementById("dealerTotal").textContent = "?";
-
-  document.getElementById("hitBtn").disabled = false;
-  document.getElementById("standBtn").disabled = false;
-  document.getElementById("dealBtn").disabled = true;
-
-  status("Hit or Stand");
-}
-
-function hit() {
-  if (!inRound) return;
-
-  dealCard(player);
-  renderHand(player, document.getElementById("playerCards"));
-  const val = handValue(player);
-  document.getElementById("playerTotal").textContent = val;
-
-  if (val > 21) endRound();
-}
-
-function stand() {
-  if (!inRound) return;
-  endRound();
-}
-
-function endRound() {
-  let playerVal = handValue(player);
-  let dealerVal = handValue(dealer);
-
-  while (dealerVal < 17) {
-    dealCard(dealer);
-    dealerVal = handValue(dealer);
-  }
-
-  renderHand(dealer, document.getElementById("dealerCards"));
-  document.getElementById("dealerTotal").textContent = dealerVal;
-  document.getElementById("playerTotal").textContent = playerVal;
-
-  if (playerVal > 21) {
-    status("You busted.");
-  } else if (dealerVal > 21) {
-    status("Dealer busts — you win!");
-    balance += currentBet * 2;
-  } else if (playerVal > dealerVal) {
-    status("You win!");
-    balance += currentBet * 2;
-  } else if (playerVal < dealerVal) {
-    status("Dealer wins.");
-  } else {
-    status("Push — bet returned.");
-    balance += currentBet;
-  }
+  const totalBefore = shares * avgCost;
+  shares += qty;
+  avgCost = (totalBefore + cost) / shares;
 
   saveBalance();
+  updatePosition();
+  status(`Bought ${qty} @ $${currentPrice.toFixed(2)}`);
+}
 
-  inRound = false;
-  document.getElementById("hitBtn").disabled = true;
-  document.getElementById("standBtn").disabled = true;
-  document.getElementById("dealBtn").disabled = false;
+function sell() {
+  const qty = parseInt(document.getElementById("qty").value);
+  if (!qty || qty <= 0) return;
+
+  if (qty > shares) {
+    status("Not enough shares.");
+    return;
+  }
+
+  const revenue = qty * currentPrice;
+  balance += revenue;
+
+  shares -= qty;
+  if (shares === 0) avgCost = 0;
+
+  saveBalance();
+  updatePosition();
+  status(`Sold ${qty} @ $${currentPrice.toFixed(2)}`);
+}
+
+function updatePosition() {
+  document.getElementById("shares").textContent = shares;
+  document.getElementById("avgCost").textContent = avgCost.toFixed(2);
+  updateUnrealized();
 }
 
 function status(msg) {
   document.getElementById("status").textContent = msg;
 }
 
-/* ---------------- INIT ---------------- */
-document.getElementById("dealBtn").onclick = startRound;
-document.getElementById("hitBtn").onclick = hit;
-document.getElementById("standBtn").onclick = stand;
+/* ---------------- EVENTS ---------------- */
+document.getElementById("buyBtn").onclick = buy;
+document.getElementById("sellBtn").onclick = sell;
+document.getElementById("nextBtn").onclick = stepCandle;
 
+/* ---------------- INIT ---------------- */
 loadBalance();
+stepCandle();
 </script>
 
 </body>
