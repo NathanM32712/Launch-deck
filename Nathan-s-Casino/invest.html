@@ -1,404 +1,353 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Candle Stock Simulator</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #0b1220;
-      color: #f9fafb;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
-      padding: 20px;
-    }
-    .app {
-      background: #020617;
-      border-radius: 8px;
-      padding: 16px 20px 20px;
-      max-width: 900px;
-      width: 100%;
-      box-shadow: 0 0 18px rgba(0,0,0,0.7);
-    }
-    h1 {
-      margin: 0 0 10px;
-      text-align: center;
-    }
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .balance {
-      font-size: 1.05em;
-    }
-    .small {
-      font-size: 0.8em;
-      opacity: 0.8;
-    }
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-    }
-    input[type="number"] {
-      width: 90px;
-      padding: 4px;
-      border-radius: 4px;
-      border: 1px solid #4b5563;
-      background: #020617;
-      color: #e5e7eb;
-    }
-    button {
-      padding: 6px 12px;
-      border-radius: 4px;
-      border: none;
-      cursor: pointer;
-      background: #22c55e;
-      color: #022c22;
-      font-weight: bold;
-    }
-    button.sell {
-      background: #f97316;
-      color: #451a03;
-    }
-    button:disabled {
-      background: #4b5563;
-      color: #9ca3af;
-      cursor: default;
-    }
-    .chart-wrapper {
-      margin-top: 10px;
-      background: #020617;
-      border-radius: 6px;
-      border: 1px solid #1f2937;
-      padding: 8px;
-    }
-    canvas {
-      background: #020617;
-      border-radius: 4px;
-      width: 100%;
-      max-width: 100%;
-    }
-    .info-row {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 8px;
-      font-size: 0.9em;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-    .status {
-      margin-top: 8px;
-      min-height: 18px;
-      font-size: 0.9em;
-    }
-    .position {
-      margin-top: 4px;
-      font-size: 0.9em;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Candle Market Simulator</title>
+
+<!-- Correct favicon -->
+<link rel="icon" type="image/png" href="../icon.png">
+
+<style>
+  body {
+    background:#0b1220;
+    color:#f9fafb;
+    font-family:Arial, sans-serif;
+    display:flex;
+    justify-content:center;
+    padding-top:60px;
+  }
+
+  /* Back button */
+  .back-btn {
+    position:fixed;
+    top:10px;
+    left:10px;
+    width:40px;
+    height:40px;
+    background-image:url('../icon.png');
+    background-size:contain;
+    background-repeat:no-repeat;
+    background-position:center;
+    cursor:pointer;
+    z-index:9999;
+  }
+
+  .app {
+    background:#020617;
+    padding:20px;
+    border-radius:10px;
+    width:900px;
+    box-shadow:0 0 20px rgba(0,0,0,0.6);
+  }
+
+  h1 {
+    text-align:center;
+    margin-top:0;
+  }
+
+  .top {
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    margin-bottom:10px;
+  }
+
+  .balance {
+    font-size:1.1em;
+  }
+
+  .controls {
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:10px;
+  }
+
+  input {
+    background:#0b1220;
+    border:1px solid #334155;
+    color:white;
+    padding:6px;
+    border-radius:6px;
+    width:100px;
+  }
+
+  button {
+    background:#4ecca3;
+    border:none;
+    padding:8px 14px;
+    border-radius:6px;
+    font-weight:bold;
+    cursor:pointer;
+    color:#022c22;
+  }
+
+  button.sell {
+    background:#f97316;
+    color:#451a03;
+  }
+
+  canvas {
+    width:100%;
+    background:#020617;
+    border-radius:6px;
+  }
+
+  .info {
+    margin-top:10px;
+    font-size:0.9em;
+  }
+
+  .status {
+    margin-top:10px;
+    min-height:20px;
+  }
+</style>
 </head>
 <body>
-  <div class="app">
-    <h1>Candle Stock Market Simulator</h1>
 
-    <div class="top-bar">
-      <div class="balance">
-        Balance: $<span id="balance">0</span>
-        <span class="small">(cookie: <code>balance</code>)</span>
-      </div>
-      <div class="position">
-        Shares: <span id="shares">0</span> |
-        Avg Cost: $<span id="avgCost">0</span> |
-        Unrealized P/L: $<span id="unrealized">0</span>
-      </div>
+<a class="back-btn" href="../launch-deck.html"></a>
+
+<div class="app">
+  <h1>Candle Market Simulator</h1>
+
+  <div class="top">
+    <div class="balance">Balance: $<span id="balance">0</span></div>
+    <div>
+      Shares: <span id="shares">0</span> |
+      Avg Cost: $<span id="avgCost">0</span> |
+      Unrealized: $<span id="unrealized">0</span>
     </div>
-
-    <div class="controls">
-      <span>Price: $<span id="price">0</span></span>
-      <label>
-        Qty:
-        <input type="number" id="qty" min="1" step="1" value="10">
-      </label>
-      <button id="buyBtn">Buy</button>
-      <button id="sellBtn" class="sell">Sell</button>
-      <button id="nextBtn">Next Candle</button>
-    </div>
-
-    <div class="chart-wrapper">
-      <canvas id="chart" width="800" height="300"></canvas>
-      <div class="info-row">
-        <span>Last candle: O <span id="oVal">0</span> H <span id="hVal">0</span> L <span id="lVal">0</span> C <span id="cVal">0</span></span>
-        <span class="small">Random walk candles. Trade, then step time with “Next Candle”.</span>
-      </div>
-    </div>
-
-    <div class="status" id="status"></div>
   </div>
 
-  <script>
-    // ---------- Cookie helpers ----------
-    function setCookie(name, value, days) {
-      const d = new Date();
-      d.setTime(d.getTime() + (days*24*60*60*1000));
-      const expires = "expires=" + d.toUTCString();
-      document.cookie = name + "=" + encodeURIComponent(value) + ";" + expires + ";path=/";
-    }
+  <div class="controls">
+    <div>Price: $<span id="price">0</span></div>
+    <input type="number" id="qty" value="10" min="1">
+    <button id="buyBtn">Buy</button>
+    <button id="sellBtn" class="sell">Sell</button>
+    <button id="nextBtn">Next Candle</button>
+  </div>
 
-    function getCookie(name) {
-      const cname = name + "=";
-      const decodedCookie = decodeURIComponent(document.cookie);
-      const ca = decodedCookie.split(';');
-      for (let i = 0; i < ca.length; i++) {
-        let c = ca[i].trim();
-        if (c.indexOf(cname) === 0) {
-          return c.substring(cname.length, c.length);
-        }
-      }
-      return null;
-    }
+  <canvas id="chart" width="900" height="300"></canvas>
 
-    // ---------- State ----------
-    let balance = 0;
-    let candles = []; // {o,h,l,c}
-    let currentPrice = 100;
-    let shares = 0;
-    let avgCost = 0;
+  <div class="info">
+    O: <span id="oVal">0</span> |
+    H: <span id="hVal">0</span> |
+    L: <span id="lVal">0</span> |
+    C: <span id="cVal">0</span>
+  </div>
 
-    const balanceSpan = document.getElementById('balance');
-    const priceSpan = document.getElementById('price');
-    const sharesSpan = document.getElementById('shares');
-    const avgCostSpan = document.getElementById('avgCost');
-    const unrealizedSpan = document.getElementById('unrealized');
-    const statusDiv = document.getElementById('status');
+  <div class="status" id="status"></div>
+</div>
 
-    const oVal = document.getElementById('oVal');
-    const hVal = document.getElementById('hVal');
-    const lVal = document.getElementById('lVal');
-    const cVal = document.getElementById('cVal');
+<script>
+// ---------------- COOKIE HELPERS ----------------
+function setCookie(name, value, days) {
+  const d = new Date();
+  d.setTime(d.getTime() + (days*24*60*60*1000));
+  document.cookie = name + "=" + encodeURIComponent(value) + ";expires=" + d.toUTCString() + ";path=/";
+}
 
-    const qtyInput = document.getElementById('qty');
-    const buyBtn = document.getElementById('buyBtn');
-    const sellBtn = document.getElementById('sellBtn');
-    const nextBtn = document.getElementById('nextBtn');
+function getCookie(name) {
+  const cname = name + "=";
+  const arr = decodeURIComponent(document.cookie).split(";");
+  for (let c of arr) {
+    c = c.trim();
+    if (c.indexOf(cname) === 0) return c.substring(cname.length);
+  }
+  return null;
+}
 
-    const canvas = document.getElementById('chart');
-    const ctx = canvas.getContext('2d');
+// ---------------- STATE ----------------
+let balance = 0;
+let candles = [];
+let currentPrice = 100;
+let shares = 0;
+let avgCost = 0;
 
-    // ---------- Balance ----------
-    function initBalance() {
-      const stored = getCookie('balance');
-      if (stored !== null && !isNaN(parseInt(stored, 10))) {
-        balance = parseInt(stored, 10);
-      } else {
-        balance = 1000;
-        setCookie('balance', balance, 365);
-      }
-      updateBalanceDisplay();
-    }
+const balanceSpan = document.getElementById("balance");
+const priceSpan = document.getElementById("price");
+const sharesSpan = document.getElementById("shares");
+const avgCostSpan = document.getElementById("avgCost");
+const unrealizedSpan = document.getElementById("unrealized");
+const statusDiv = document.getElementById("status");
 
-    function updateBalanceDisplay() {
-      balanceSpan.textContent = balance.toFixed(2);
-    }
+const oVal = document.getElementById("oVal");
+const hVal = document.getElementById("hVal");
+const lVal = document.getElementById("lVal");
+const cVal = document.getElementById("cVal");
 
-    function saveBalance() {
-      setCookie('balance', balance, 365);
-      updateBalanceDisplay();
-    }
+const canvas = document.getElementById("chart");
+const ctx = canvas.getContext("2d");
 
-    // ---------- Price / candles ----------
-    function randomCandle(prevClose) {
-      // simple random walk with some volatility
-      const vol = 1.5; // tweak for more/less chaos
-      const open = prevClose;
-      const move = (Math.random() - 0.5) * vol * 2;
-      let close = Math.max(1, open + move);
+// ---------------- BALANCE ----------------
+function initBalance() {
+  const stored = getCookie("balance");
+  balance = stored && !isNaN(stored) ? parseInt(stored) : 1000;
+  saveBalance();
+}
 
-      // high/low around open/close
-      const high = Math.max(open, close) + Math.random() * vol;
-      const low = Math.max(1, Math.min(open, close) - Math.random() * vol);
+function saveBalance() {
+  setCookie("balance", balance, 365);
+  balanceSpan.textContent = balance.toFixed(2);
+}
 
-      return {
-        o: parseFloat(open.toFixed(2)),
-        h: parseFloat(high.toFixed(2)),
-        l: parseFloat(low.toFixed(2)),
-        c: parseFloat(close.toFixed(2))
-      };
-    }
+// ---------------- CANDLE GENERATION ----------------
+function randomCandle(prevClose) {
+  const vol = 1.5;
+  const open = prevClose;
+  const move = (Math.random() - 0.5) * vol * 2;
+  const close = Math.max(1, open + move);
 
-    function stepCandle() {
-      const prevClose = candles.length ? candles[candles.length - 1].c : currentPrice;
-      const candle = randomCandle(prevClose);
-      candles.push(candle);
-      currentPrice = candle.c;
-      updatePriceDisplay();
-      updateLastCandleInfo(candle);
-      drawChart();
-      updateUnrealized();
-    }
+  const high = Math.max(open, close) + Math.random() * vol;
+  const low = Math.max(1, Math.min(open, close) - Math.random() * vol);
 
-    function updatePriceDisplay() {
-      priceSpan.textContent = currentPrice.toFixed(2);
-    }
+  return {
+    o: open.toFixed(2),
+    h: high.toFixed(2),
+    l: low.toFixed(2),
+    c: close.toFixed(2)
+  };
+}
 
-    function updateLastCandleInfo(c) {
-      oVal.textContent = c.o.toFixed(2);
-      hVal.textContent = c.h.toFixed(2);
-      lVal.textContent = c.l.toFixed(2);
-      cVal.textContent = c.c.toFixed(2);
-    }
+function stepCandle() {
+  const prev = candles.length ? parseFloat(candles[candles.length - 1].c) : currentPrice;
+  const c = randomCandle(prev);
+  candles.push(c);
+  currentPrice = parseFloat(c.c);
 
-    // ---------- Chart drawing ----------
-    function drawChart() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+  updateCandleInfo(c);
+  updatePrice();
+  updateUnrealized();
+  drawChart();
+}
 
-      if (!candles.length) return;
+function updateCandleInfo(c) {
+  oVal.textContent = c.o;
+  hVal.textContent = c.h;
+  lVal.textContent = c.l;
+  cVal.textContent = c.c;
+}
 
-      const padding = 20;
-      const w = canvas.width;
-      const h = canvas.height;
+function updatePrice() {
+  priceSpan.textContent = currentPrice.toFixed(2);
+}
 
-      const minPrice = Math.min(...candles.map(c => c.l));
-      const maxPrice = Math.max(...candles.map(c => c.h));
-      const priceRange = maxPrice - minPrice || 1;
+// ---------------- CHART ----------------
+function drawChart() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const candleWidth = Math.max(4, (w - padding * 2) / Math.max(30, candles.length));
-      const offsetX = w - padding - candleWidth * candles.length;
+  if (!candles.length) return;
 
-      // grid line
-      ctx.strokeStyle = '#1f2937';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(padding, padding);
-      ctx.lineTo(padding, h - padding);
-      ctx.lineTo(w - padding, h - padding);
-      ctx.stroke();
+  const padding = 20;
+  const w = canvas.width;
+  const h = canvas.height;
 
-      candles.forEach((c, i) => {
-        const xCenter = offsetX + i * candleWidth + candleWidth / 2;
+  const lows = candles.map(c => parseFloat(c.l));
+  const highs = candles.map(c => parseFloat(c.h));
 
-        const yHigh = mapPriceToY(c.h, minPrice, priceRange, h, padding);
-        const yLow = mapPriceToY(c.l, minPrice, priceRange, h, padding);
-        const yOpen = mapPriceToY(c.o, minPrice, priceRange, h, padding);
-        const yClose = mapPriceToY(c.c, minPrice, priceRange, h, padding);
+  const minPrice = Math.min(...lows);
+  const maxPrice = Math.max(...highs);
+  const range = maxPrice - minPrice || 1;
 
-        const isUp = c.c >= c.o;
-        const color = isUp ? '#22c55e' : '#ef4444';
+  const candleWidth = Math.max(6, (w - padding * 2) / candles.length);
 
-        // wick
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(xCenter, yHigh);
-        ctx.lineTo(xCenter, yLow);
-        ctx.stroke();
+  candles.forEach((c, i) => {
+    const open = parseFloat(c.o);
+    const close = parseFloat(c.c);
+    const high = parseFloat(c.h);
+    const low = parseFloat(c.l);
 
-        // body
-        const bodyTop = Math.min(yOpen, yClose);
-        const bodyBottom = Math.max(yOpen, yClose);
-        const bodyHeight = Math.max(2, bodyBottom - bodyTop);
+    const x = padding + i * candleWidth + candleWidth / 2;
 
-        ctx.fillStyle = color;
-        ctx.fillRect(xCenter - candleWidth / 2 + 1, bodyTop, candleWidth - 2, bodyHeight);
-      });
-    }
+    const yHigh = map(high);
+    const yLow = map(low);
+    const yOpen = map(open);
+    const yClose = map(close);
 
-    function mapPriceToY(price, minPrice, range, height, padding) {
-      const normalized = (price - minPrice) / range;
-      return height - padding - normalized * (height - padding * 2);
-    }
+    const color = close >= open ? "#22c55e" : "#ef4444";
 
-    // ---------- Trading ----------
-    function updatePositionDisplay() {
-      sharesSpan.textContent = shares;
-      avgCostSpan.textContent = shares > 0 ? avgCost.toFixed(2) : '0';
-      updateUnrealized();
-    }
+    // wick
+    ctx.strokeStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x, yHigh);
+    ctx.lineTo(x, yLow);
+    ctx.stroke();
 
-    function updateUnrealized() {
-      const unrealized = shares * (currentPrice - avgCost);
-      unrealizedSpan.textContent = unrealized.toFixed(2);
-    }
+    // body
+    const top = Math.min(yOpen, yClose);
+    const bottom = Math.max(yOpen, yClose);
+    ctx.fillStyle = color;
+    ctx.fillRect(x - candleWidth / 2 + 1, top, candleWidth - 2, bottom - top);
+  });
 
-    function buy() {
-      const qty = parseInt(qtyInput.value, 10);
-      if (isNaN(qty) || qty <= 0) {
-        statusDiv.textContent = 'Enter a valid quantity.';
-        return;
-      }
-      const cost = qty * currentPrice;
-      if (cost > balance) {
-        statusDiv.textContent = 'Not enough balance to buy.';
-        return;
-      }
-      // update balance
-      balance -= cost;
-      saveBalance();
+  function map(price) {
+    return h - padding - ((price - minPrice) / range) * (h - padding * 2);
+  }
+}
 
-      // update position (weighted average)
-      const totalCostBefore = shares * avgCost;
-      shares += qty;
-      avgCost = (totalCostBefore + cost) / shares;
+// ---------------- TRADING ----------------
+function updateUnrealized() {
+  const unreal = shares * (currentPrice - avgCost);
+  unrealizedSpan.textContent = unreal.toFixed(2);
+}
 
-      updatePositionDisplay();
-      statusDiv.textContent = `Bought ${qty} @ $${currentPrice.toFixed(2)}.`;
-    }
+function buy() {
+  const qty = parseInt(document.getElementById("qty").value);
+  if (!qty || qty <= 0) return;
 
-    function sell() {
-      const qty = parseInt(qtyInput.value, 10);
-      if (isNaN(qty) || qty <= 0) {
-        statusDiv.textContent = 'Enter a valid quantity.';
-        return;
-      }
-      if (qty > shares) {
-        statusDiv.textContent = 'You do not have that many shares.';
-        return;
-      }
-      const proceeds = qty * currentPrice;
-      balance += proceeds;
-      saveBalance();
+  const cost = qty * currentPrice;
+  if (cost > balance) {
+    statusDiv.textContent = "Not enough balance.";
+    return;
+  }
 
-      // realize P/L by reducing position
-      const remainingShares = shares - qty;
-      if (remainingShares === 0) {
-        shares = 0;
-        avgCost = 0;
-      } else {
-        shares = remainingShares;
-        // avgCost stays the same for remaining shares
-      }
+  balance -= cost;
 
-      updatePositionDisplay();
-      statusDiv.textContent = `Sold ${qty} @ $${currentPrice.toFixed(2)}.`;
-    }
+  const totalBefore = shares * avgCost;
+  shares += qty;
+  avgCost = (totalBefore + cost) / shares;
 
-    // ---------- Events ----------
-    buyBtn.addEventListener('click', buy);
-    sellBtn.addEventListener('click', sell);
-    nextBtn.addEventListener('click', stepCandle);
+  saveBalance();
+  updatePosition();
+  statusDiv.textContent = `Bought ${qty} @ $${currentPrice.toFixed(2)}`;
+}
 
-    // ---------- Boot ----------
-    function init() {
-      initBalance();
-      // seed first candle
-      const first = randomCandle(currentPrice);
-      candles.push(first);
-      currentPrice = first.c;
-      updatePriceDisplay();
-      updateLastCandleInfo(first);
-      drawChart();
-      updatePositionDisplay();
-      statusDiv.textContent = 'Welcome. Trade and step time with Next Candle.';
-    }
+function sell() {
+  const qty = parseInt(document.getElementById("qty").value);
+  if (!qty || qty <= 0) return;
 
-    init();
-  </script>
+  if (qty > shares) {
+    statusDiv.textContent = "Not enough shares.";
+    return;
+  }
+
+  const revenue = qty * currentPrice;
+  balance += revenue;
+
+  shares -= qty;
+  if (shares === 0) avgCost = 0;
+
+  saveBalance();
+  updatePosition();
+  statusDiv.textContent = `Sold ${qty} @ $${currentPrice.toFixed(2)}`;
+}
+
+function updatePosition() {
+  sharesSpan.textContent = shares;
+  avgCostSpan.textContent = avgCost.toFixed(2);
+  updateUnrealized();
+}
+
+// ---------------- EVENTS ----------------
+document.getElementById("buyBtn").onclick = buy;
+document.getElementById("sellBtn").onclick = sell;
+document.getElementById("nextBtn").onclick = stepCandle;
+
+// ---------------- INIT ----------------
+initBalance();
+stepCandle();
+</script>
+
 </body>
 </html>
