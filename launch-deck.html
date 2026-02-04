@@ -85,10 +85,10 @@
   </div>
 
   <div class="tabs">
-    <div class="tab active" onclick="showTab('info')">Info</div>
-    <div class="tab" onclick="showTab('tools')">Tools</div>
-    <div class="tab" onclick="showTab('games')">Games</div>
-    <div class="tab" onclick="showTab('casino')">casino</div>
+    <div class="tab active" data-tab="info">Info</div>
+    <div class="tab" data-tab="tools">Tools</div>
+    <div class="tab" data-tab="games">Games</div>
+    <div class="tab" data-tab="casino">Casino</div>
   </div>
   
   <div id="info" class="section active button-grid">
@@ -113,68 +113,117 @@
     <button class="game-button" onclick="location.href='othergames/powder sandbox.html'">sand:box</button>
   </div>
 
-  <div id="casino" class="section active button-grid">
+  <div id="casino" class="section button-grid">
     <button class="game-button" onclick="location.href='Nathan-s-Casino/limbo.html'">limbo</button>
     <button class="game-button" onclick="location.href='Nathan-s-Casino/invest.html'">stonks</button>
     <button class="game-button" onclick="location.href='Nathan-s-Casino/plinko.html'">plinko</button>
     <button class="game-button" onclick="location.href='Nathan-s-Casino/Blackjack.html'">blackjack</button>
   </div>
 
-  <script>
-    function showTab(tabName) {
-      document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.getElementById(tabName).classList.add('active');
-      event.target.classList.add('active');
-    }
+<script>
+/* ---------------- TAB FIX ---------------- */
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    const target = tab.dataset.tab;
 
-    let sequence = "";
-    const target = "admin";
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
 
-    const secretBox = document.createElement("div");
-    secretBox.style.position = "fixed";
-    secretBox.style.top = "50%";
-    secretBox.style.left = "50%";
-    secretBox.style.transform = "translate(-50%, -50%)";
-    secretBox.style.background = "#06273f";
-    secretBox.style.padding = "20px";
-    secretBox.style.borderRadius = "10px";
-    secretBox.style.boxShadow = "0 0 20px rgba(0,0,0,0.6)";
+    tab.classList.add("active");
+    document.getElementById(target).classList.add("active");
+  });
+});
+
+/* ---------------- COOKIE HELPERS ---------------- */
+function setCookie(name, value, days) {
+  const d = new Date();
+  d.setTime(d.getTime() + (days*24*60*60*1000));
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${d.toUTCString()};path=/`;
+}
+
+function getCookie(name) {
+  const cname = name + "=";
+  const arr = decodeURIComponent(document.cookie).split(";");
+  for (let c of arr) {
+    c = c.trim();
+    if (c.indexOf(cname) === 0) return c.substring(cname.length);
+  }
+  return null;
+}
+
+/* ---------------- ZERO-BALANCE NEXT-DAY RESET ---------------- */
+function checkZeroReset() {
+  let balance = parseInt(getCookie("balance") || "0");
+  const zeroDate = getCookie("zeroDate");
+  const today = new Date().toDateString();
+
+  // If balance hits 0 and no date saved → save today's date
+  if (balance <= 0 && !zeroDate) {
+    setCookie("zeroDate", today, 365);
+    return;
+  }
+
+  // If balance is 0 AND it's a new day → give $100
+  if (balance <= 0 && zeroDate && zeroDate !== today) {
+    balance = 100;
+    setCookie("balance", balance, 365);
+    setCookie("zeroDate", today, 365);
+    alert("You hit $0 yesterday — here’s your daily $100!");
+    return;
+  }
+
+  // If balance is above 0 → clear zeroDate
+  if (balance > 0 && zeroDate) {
+    setCookie("zeroDate", "", -1);
+  }
+}
+
+checkZeroReset();
+
+/* ---------------- ADMIN SECRET ---------------- */
+let sequence = "";
+const target = "admin";
+
+const secretBox = document.createElement("div");
+secretBox.style.position = "fixed";
+secretBox.style.top = "50%";
+secretBox.style.left = "50%";
+secretBox.style.transform = "translate(-50%, -50%)";
+secretBox.style.background = "#06273f";
+secretBox.style.padding = "20px";
+secretBox.style.borderRadius = "10px";
+secretBox.style.boxShadow = "0 0 20px rgba(0,0,0,0.6)";
+secretBox.style.display = "none";
+secretBox.style.zIndex = "9999";
+
+secretBox.innerHTML = `
+  <p style='color:#9bd6ff; font-family:Segoe UI;'>Enter admin phrase:</p>
+  <input id='adminPhrase' type='text' style='width:100%; padding:10px; border-radius:6px; border:none; background:#08314a; color:#cfefff;'>
+  <button id='adminSubmit' style='margin-top:10px; width:100%; padding:10px; border-radius:6px; border:none; background:#48b0ff; font-weight:bold; cursor:pointer;'>Unlock Admin</button>
+`;
+
+document.body.appendChild(secretBox);
+
+document.addEventListener("keydown", (e) => {
+  sequence += e.key.toLowerCase();
+  if (sequence.length > 5) sequence = sequence.slice(-5);
+  if (sequence === target) {
+    secretBox.style.display = "block";
+    document.getElementById("adminPhrase").focus();
+  }
+});
+
+document.getElementById("adminSubmit").addEventListener("click", () => {
+  const phrase = document.getElementById("adminPhrase").value.trim();
+  if (phrase === "this website is the G.O.A.T.") {
+    document.cookie = "admin=true; path=/;";
+    alert("Admin unlocked!");
     secretBox.style.display = "none";
-    secretBox.style.zIndex = "9999";
-
-    secretBox.innerHTML = `
-      <p style='color:#9bd6ff; font-family:Segoe UI;'>Enter admin phrase:</p>
-      <input id='adminPhrase' type='text' style='width:100%; padding:10px; border-radius:6px; border:none; background:#08314a; color:#cfefff;'>
-      <button id='adminSubmit' style='margin-top:10px; width:100%; padding:10px; border-radius:6px; border:none; background:#48b0ff; font-weight:bold; cursor:pointer;'>Unlock Admin</button>
-    `;
-
-    document.body.appendChild(secretBox);
-
-    document.addEventListener("keydown", (e) => {
-      sequence += e.key.toLowerCase();
-      if (sequence.length > 5) sequence = sequence.slice(-5);
-      if (sequence === target) {
-        secretBox.style.display = "block";
-        document.getElementById("adminPhrase").focus();
-      }
-    });
-
-    document.getElementById("adminSubmit").addEventListener("click", () => {
-      const phrase = document.getElementById("adminPhrase").value.trim();
-      if (phrase === "this website is the G.O.A.T.") {
-        document.cookie = "admin=true; path=/;";
-        alert("Admin unlocked!");
-        secretBox.style.display = "none";
-      } else {
-        alert("Incorrect phrase.");
-      }
-    });
-  </script>
+  } else {
+    alert("Incorrect phrase.");
+  }
+});
+</script>
 
 </body>
 </html>
-
-
-
-
