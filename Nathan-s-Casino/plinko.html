@@ -3,8 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <title>Plinko</title>
-
-<!-- Correct favicon -->
 <link rel="icon" type="image/png" href="../icon.png">
 
 <style>
@@ -17,7 +15,6 @@
     padding-top:60px;
   }
 
-  /* Back button */
   .back-btn {
     position:fixed;
     top:10px;
@@ -39,6 +36,12 @@
     width:420px;
     text-align:center;
     box-shadow:0 0 20px rgba(0,0,0,0.5);
+  }
+
+  canvas {
+    background:#0b0b16;
+    border-radius:10px;
+    margin-top:20px;
   }
 
   input {
@@ -70,18 +73,6 @@
     background:#3ba987;
   }
 
-  .slots {
-    margin-top:20px;
-    display:flex;
-    justify-content:space-between;
-    font-size:14px;
-  }
-
-  .slot {
-    width:40px;
-    text-align:center;
-  }
-
   #result {
     margin-top:20px;
     font-size:22px;
@@ -99,30 +90,19 @@
   <div>Balance: $<span id="balance">0</span></div>
 
   <input type="number" id="bet" placeholder="Bet" min="1">
-
   <button id="dropBtn">DROP</button>
 
-  <div class="slots">
-    <div class="slot">0.1x</div>
-    <div class="slot">0.5x</div>
-    <div class="slot">1x</div>
-    <div class="slot">3x</div>
-    <div class="slot">5x</div>
-    <div class="slot">3x</div>
-    <div class="slot">1x</div>
-    <div class="slot">0.5x</div>
-    <div class="slot">0.1x</div>
-  </div>
+  <canvas id="board" width="400" height="500"></canvas>
 
   <div id="result"></div>
 </div>
 
 <script>
-// ---------------- COOKIE HELPERS ----------------
+/* ---------------- COOKIE HELPERS ---------------- */
 function setCookie(name, value, days) {
   const d = new Date();
   d.setTime(d.getTime() + (days*24*60*60*1000));
-  document.cookie = name + "=" + encodeURIComponent(value) + ";expires=" + d.toUTCString() + ";path=/";
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${d.toUTCString()};path=/`;
 }
 
 function getCookie(name) {
@@ -135,50 +115,125 @@ function getCookie(name) {
   return null;
 }
 
-// ---------------- BALANCE ----------------
+/* ---------------- BALANCE ---------------- */
 let balance = 0;
 
-function initBalance() {
+function loadBalance() {
   const stored = getCookie("balance");
-  balance = stored && !isNaN(stored) ? parseInt(stored) : 1000;
-  saveBalance();
+  balance = stored && !isNaN(stored) ? parseInt(stored) : 0;
+  updateBalance();
+}
+
+function updateBalance() {
+  document.getElementById("balance").textContent = balance;
 }
 
 function saveBalance() {
   setCookie("balance", balance, 365);
-  document.getElementById("balance").textContent = balance;
+  updateBalance();
 }
 
-// ---------------- PLINKO LOGIC ----------------
+/* ---------------- PLINKO BOARD ---------------- */
+const canvas = document.getElementById("board");
+const ctx = canvas.getContext("2d");
 
-// multipliers (center = 5)
-const multipliers = [0.1, 0.5, 1, 3, 5, 3, 1, 0.5, 0.1];
+const pegs = [];
+const rows = 10;
+const spacing = 35;
 
-// rarity weights (center rare)
-const weights = [
-  30, // 0.1
-  20, // 0.5
-  15, // 1
-  8,  // 3
-  2,  // 5 (center)
-  8,  // 3
-  15, // 1
-  20, // 0.5
-  30  // 0.1
+for (let r = 0; r < rows; r++) {
+  for (let c = 0; c <= r; c++) {
+    pegs.push({
+      x: canvas.width/2 - (r * spacing)/2 + c * spacing,
+      y: 60 + r * spacing
+    });
+  }
+}
+
+const slots = [
+  0.1, 0.5, 1, 3, 5, 3, 1, 0.5, 0.1
 ];
 
-function dropPlinko() {
-  const total = weights.reduce((a,b)=>a+b,0);
-  let r = Math.random() * total;
+let ball = null;
 
-  for (let i = 0; i < weights.length; i++) {
-    if (r < weights[i]) return i;
-    r -= weights[i];
-  }
-  return 4; // fallback center
+/* ---------------- BALL PHYSICS ---------------- */
+function dropBall() {
+  ball = {
+    x: canvas.width/2,
+    y: 20,
+    vx: 0,
+    vy: 2
+  };
 }
 
-// ---------------- GAME ----------------
+function updateBall() {
+  if (!ball) return;
+
+  ball.vy += 0.15;
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+
+  // collisions with pegs
+  for (let p of pegs) {
+    const dx = ball.x - p.x;
+    const dy = ball.y - p.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    if (dist < 10) {
+      ball.vy *= -0.4;
+      ball.vx += (Math.random() - 0.5) * 2;
+    }
+  }
+
+  // bottom reached
+  if (ball.y > canvas.height - 30) {
+    const slotWidth = canvas.width / slots.length;
+    const index = Math.floor(ball.x / slotWidth);
+    finishDrop(index);
+    ball = null;
+  }
+}
+
+function drawBoard() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // draw pegs
+  ctx.fillStyle = "#4ecca3";
+  for (let p of pegs) {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 5, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // draw slots
+  const slotWidth = canvas.width / slots.length;
+  for (let i = 0; i < slots.length; i++) {
+    ctx.fillStyle = "#222";
+    ctx.fillRect(i*slotWidth, canvas.height-30, slotWidth-2, 30);
+
+    ctx.fillStyle = "white";
+    ctx.font = "12px Arial";
+    ctx.fillText(slots[i] + "x", i*slotWidth + slotWidth/2 - 10, canvas.height - 10);
+  }
+
+  // draw ball
+  if (ball) {
+    ctx.fillStyle = "yellow";
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, 8, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function loop() {
+  updateBall();
+  drawBoard();
+  requestAnimationFrame(loop);
+}
+
+loop();
+
+/* ---------------- GAME LOGIC ---------------- */
 document.getElementById("dropBtn").onclick = () => {
   const bet = parseFloat(document.getElementById("bet").value);
   const resultDiv = document.getElementById("result");
@@ -195,18 +250,25 @@ document.getElementById("dropBtn").onclick = () => {
   balance -= bet;
   saveBalance();
 
-  const slot = dropPlinko();
-  const mult = multipliers[slot];
+  resultDiv.textContent = "Dropping...";
+
+  dropBall();
+};
+
+function finishDrop(slotIndex) {
+  const mult = slots[slotIndex] || 0.1;
+  const bet = parseFloat(document.getElementById("bet").value);
   const win = bet * mult;
 
   balance += win;
   saveBalance();
 
-  resultDiv.textContent = `Landed on ${mult}x — You won $${win.toFixed(2)}`;
-};
+  document.getElementById("result").textContent =
+    `Landed on ${mult}x — You won $${win.toFixed(2)}`;
+}
 
-// ---------------- INIT ----------------
-initBalance();
+/* ---------------- INIT ---------------- */
+loadBalance();
 </script>
 
 </body>
