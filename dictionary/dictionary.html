@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Dictionary Search</title>
+<style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    #results { margin-top: 20px; white-space: pre-wrap; }
+    mark { background: yellow; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<h2>Dictionary Search</h2>
+<input id="searchBox" type="text" placeholder="Search for a word..." style="width:300px;">
+<button onclick="search()">Search</button>
+
+<div id="results"></div>
+
+<script>
+let lines = [];
+
+// Load dictionary.txt
+fetch("dictionary.txt")
+    .then(r => r.text())
+    .then(t => {
+        lines = t.split(/\r?\n/);
+    });
+
+function search() {
+    const query = document.getElementById("searchBox").value.trim().toLowerCase();
+    if (!query) return;
+
+    let resultsHTML = "";
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].toLowerCase();
+
+        // Match word OR definition text
+        if (line.includes(query)) {
+
+            // Grab 3 lines above and 3 below
+            const start = Math.max(0, i - 3);
+            const end = Math.min(lines.length - 1, i + 3);
+
+            let snippet = lines.slice(start, end + 1).join("\n");
+
+            // Highlight the matched word
+            const regex = new RegExp(query, "gi");
+            snippet = snippet.replace(regex, match => `<mark>${match}</mark>`);
+
+            resultsHTML += `<pre>${snippet}</pre><hr>`;
+        }
+    }
+
+    document.getElementById("results").innerHTML = resultsHTML || "No matches found.";
+}
+</script>
+
+</body>
+</html>
