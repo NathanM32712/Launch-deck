@@ -46,12 +46,12 @@ function escapeHTML(str) {
 
 // Load dictionary.txt automatically
 function loadMainDictionary() {
-    fetch("dictionary.txt")
+    fetch("Oxford English Dictionary.txt")
         .then(r => r.text())
         .then(t => {
             lines.push(...t.split(/\r?\n/));
         })
-        .catch(err => console.log("dictionary.txt not found"));
+        .catch(err => console.log("Oxford English Dictionary.txt not found"));
 }
 
 // Load user-selected files (but never HTML)
