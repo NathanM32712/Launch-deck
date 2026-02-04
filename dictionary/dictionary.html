@@ -21,12 +21,13 @@
 </head>
 <body>
 
-<a href="../launch-deck.html">
+<a href="../launch-deck">
     <img id="backBtn" src="../icon.png">
 </a>
 
 <h2>Dictionary Search</h2>
 
+<!-- User can still upload extra .txt files -->
 <input type="file" id="fileInput" accept=".txt" multiple>
 <br><br>
 
@@ -36,22 +37,39 @@
 <script>
 let lines = [];
 
-// Load ALL selected .txt files
+// List of built-in dictionary files in the same folder
+const builtInFiles = [
+    "dictionary1.txt",
+    "dictionary2.txt",
+    "dictionary3.txt"
+];
+
+// Load built-in dictionary files automatically
+function loadBuiltInFiles() {
+    builtInFiles.forEach(file => {
+        fetch(file)
+            .then(r => r.text())
+            .then(t => {
+                lines.push(...t.split(/\r?\n/));
+            })
+            .catch(err => console.log("Missing file:", file));
+    });
+}
+
+// Load user-selected files
 document.getElementById("fileInput").addEventListener("change", function() {
-    lines = [];
     const files = this.files;
 
     for (let file of files) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            const textLines = e.target.result.split(/\r?\n/);
-            lines.push(...textLines);
+            lines.push(...e.target.result.split(/\r?\n/));
         };
         reader.readAsText(file);
     }
 });
 
-// Live update search
+// Live search
 document.getElementById("searchBox").addEventListener("input", search);
 
 function search() {
@@ -81,6 +99,9 @@ function search() {
 
     document.getElementById("results").innerHTML = resultsHTML || "No matches found.";
 }
+
+// Start by loading built-in files
+loadBuiltInFiles();
 </script>
 
 </body>
