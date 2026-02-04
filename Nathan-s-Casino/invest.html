@@ -1,268 +1,404 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>invest</title>
-  <link rel="icon" type="image/png" href="../icon.png" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <title>Candle Stock Simulator</title>
   <style>
-    :root {
-      --bg: #000;
-      --panel: #111;
-      --border: #333;
-      --up: #00ff7f;
-      --down: #ff4d4d;
-      --text: #fff;
-      --muted: #bbb;
-    }
-    html,body { height:100%; margin:0; }
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      font-family: Arial, sans-serif;
+      background: #0b1220;
+      color: #f9fafb;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .app {
+      background: #020617;
+      border-radius: 8px;
+      padding: 16px 20px 20px;
+      max-width: 900px;
+      width: 100%;
+      box-shadow: 0 0 18px rgba(0,0,0,0.7);
+    }
+    h1 {
+      margin: 0 0 10px;
       text-align: center;
-      padding: 18px;
-      box-sizing: border-box;
     }
-    a.logo {
-      position: fixed;
-      top: 12px;
-      left: 12px;
-      z-index: 100;
-      display:inline-block;
-      background: black;
-      border-radius:6px;
-      padding:4px;
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 8px;
     }
-    a.logo img { height:60px; display:block; border-radius:4px; }
-    h1 { margin: 8px 0 14px; font-size:20px; }
-    .info { margin-bottom:12px; line-height:1.6; }
-    .label { font-weight:700; color:var(--muted); margin-right:6px; }
-    .controls { margin-bottom:14px; }
+    .balance {
+      font-size: 1.05em;
+    }
+    .small {
+      font-size: 0.8em;
+      opacity: 0.8;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
     input[type="number"] {
-      width:160px;
-      padding:8px;
-      font-size:15px;
-      border-radius:6px;
-      border:1px solid var(--border);
-      background: #0b0b0b;
-      color:var(--text);
+      width: 90px;
+      padding: 4px;
+      border-radius: 4px;
+      border: 1px solid #4b5563;
+      background: #020617;
+      color: #e5e7eb;
     }
     button {
-      margin-left:6px;
-      padding:8px 12px;
-      font-size:15px;
-      border-radius:6px;
-      border:1px solid var(--border);
-      background:#0f0f0f;
-      color:var(--text);
-      cursor:pointer;
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      background: #22c55e;
+      color: #022c22;
+      font-weight: bold;
+    }
+    button.sell {
+      background: #f97316;
+      color: #451a03;
+    }
+    button:disabled {
+      background: #4b5563;
+      color: #9ca3af;
+      cursor: default;
+    }
+    .chart-wrapper {
+      margin-top: 10px;
+      background: #020617;
+      border-radius: 6px;
+      border: 1px solid #1f2937;
+      padding: 8px;
     }
     canvas {
-      background: var(--panel);
-      display:block;
-      margin: 12px auto;
-      border:1px solid var(--border);
-      max-width:100%;
-      width:800px;
-      height:400px;
+      background: #020617;
+      border-radius: 4px;
+      width: 100%;
+      max-width: 100%;
     }
-    .small { font-size:13px; color:var(--muted); }
-    .row { display:inline-block; margin:0 10px; }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-size: 0.9em;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .status {
+      margin-top: 8px;
+      min-height: 18px;
+      font-size: 0.9em;
+    }
+    .position {
+      margin-top: 4px;
+      font-size: 0.9em;
+    }
   </style>
 </head>
 <body>
-<button type="button" onclick="window.location.href='home.html'">Go Home</button>
-  <h1>📊 Gamble Candlestick Game</h1>
+  <div class="app">
+    <h1>Candle Stock Market Simulator</h1>
 
-  <div class="info">
-    <div class="row"><span class="label">Balance:</span><span id="balance">0</span></div>
-    <div class="row"><span class="label">Active Investment:</span><span id="investment">0</span></div>
-    <div class="row"><span class="label">Live Value:</span><span id="livevalue">0</span></div>
+    <div class="top-bar">
+      <div class="balance">
+        Balance: $<span id="balance">0</span>
+        <span class="small">(cookie: <code>balance</code>)</span>
+      </div>
+      <div class="position">
+        Shares: <span id="shares">0</span> |
+        Avg Cost: $<span id="avgCost">0</span> |
+        Unrealized P/L: $<span id="unrealized">0</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <span>Price: $<span id="price">0</span></span>
+      <label>
+        Qty:
+        <input type="number" id="qty" min="1" step="1" value="10">
+      </label>
+      <button id="buyBtn">Buy</button>
+      <button id="sellBtn" class="sell">Sell</button>
+      <button id="nextBtn">Next Candle</button>
+    </div>
+
+    <div class="chart-wrapper">
+      <canvas id="chart" width="800" height="300"></canvas>
+      <div class="info-row">
+        <span>Last candle: O <span id="oVal">0</span> H <span id="hVal">0</span> L <span id="lVal">0</span> C <span id="cVal">0</span></span>
+        <span class="small">Random walk candles. Trade, then step time with “Next Candle”.</span>
+      </div>
+    </div>
+
+    <div class="status" id="status"></div>
   </div>
-
-  <div class="controls">
-    <input id="betamount" type="number" placeholder="Enter bet amount" min="0" step="1" />
-    <button id="betBtn">Bet</button>
-    <button id="cashBtn">Cash Out</button>
-    <button id="reBtn">Reinvest</button>
-    <button id="resetBtn" title="Reset balance to 1000">Reset</button>
-  </div>
-
-  <canvas id="graph" width="800" height="400" aria-label="candlestick graph"></canvas>
 
   <script>
-    // Centralized cookie key
-    const BALANCE_KEY = 'slotsBalance';
+    // ---------- Cookie helpers ----------
+    function setCookie(name, value, days) {
+      const d = new Date();
+      d.setTime(d.getTime() + (days*24*60*60*1000));
+      const expires = "expires=" + d.toUTCString();
+      document.cookie = name + "=" + encodeURIComponent(value) + ";" + expires + ";path=/";
+    }
 
-    // Canvas + context
-    const canvas = document.getElementById('graph');
+    function getCookie(name) {
+      const cname = name + "=";
+      const decodedCookie = decodeURIComponent(document.cookie);
+      const ca = decodedCookie.split(';');
+      for (let i = 0; i < ca.length; i++) {
+        let c = ca[i].trim();
+        if (c.indexOf(cname) === 0) {
+          return c.substring(cname.length, c.length);
+        }
+      }
+      return null;
+    }
+
+    // ---------- State ----------
+    let balance = 0;
+    let candles = []; // {o,h,l,c}
+    let currentPrice = 100;
+    let shares = 0;
+    let avgCost = 0;
+
+    const balanceSpan = document.getElementById('balance');
+    const priceSpan = document.getElementById('price');
+    const sharesSpan = document.getElementById('shares');
+    const avgCostSpan = document.getElementById('avgCost');
+    const unrealizedSpan = document.getElementById('unrealized');
+    const statusDiv = document.getElementById('status');
+
+    const oVal = document.getElementById('oVal');
+    const hVal = document.getElementById('hVal');
+    const lVal = document.getElementById('lVal');
+    const cVal = document.getElementById('cVal');
+
+    const qtyInput = document.getElementById('qty');
+    const buyBtn = document.getElementById('buyBtn');
+    const sellBtn = document.getElementById('sellBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    const canvas = document.getElementById('chart');
     const ctx = canvas.getContext('2d');
 
-    // State
-    let multipliers = [0];        // cumulative multiplier values (start at 0)
-    let investment = 0;           // current invested amount
-    let multiplier = 0;           // current multiplier (last value)
-    let balance = readCookie(BALANCE_KEY) ?? 1000;
-    let maxPoints = 50;           // initial horizontal capacity (normal view)
-    const MIN_VERTICAL = 10;      // start vertical scale ±10
-    const UPDATE_MS = 1500;       // update interval
-
-    // DOM
-    const balanceEl = document.getElementById('balance');
-    const investEl = document.getElementById('investment');
-    const liveEl = document.getElementById('livevalue');
-    const betInput = document.getElementById('betamount');
-    const betBtn = document.getElementById('betBtn');
-    const cashBtn = document.getElementById('cashBtn');
-    const reBtn = document.getElementById('reBtn');
-    const resetBtn = document.getElementById('resetBtn');
-
-    // Helpers: cookie read/write
-    function readCookie(name) {
-      const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-      return m ? parseFloat(m[2]) : null;
-    }
-    function writeCookie(name, value) {
-      document.cookie = `${name}=${value}; path=/`;
-    }
-
-    // Display update
-    function updateDisplay() {
-      balanceEl.textContent = Number(balance).toFixed(2);
-      investEl.textContent = Number(investment).toFixed(2);
-      liveEl.textContent = Number(investment * multiplier).toFixed(2);
-    }
-
-    // Betting controls
-    function placeBet() {
-      const amt = Number(betInput.value) || 0;
-      if (amt > 0 && amt <= balance) {
-        balance -= amt;
-        investment += amt;
-        writeCookie(BALANCE_KEY, balance.toFixed(2));
-        updateDisplay();
+    // ---------- Balance ----------
+    function initBalance() {
+      const stored = getCookie('balance');
+      if (stored !== null && !isNaN(parseInt(stored, 10))) {
+        balance = parseInt(stored, 10);
+      } else {
+        balance = 1000;
+        setCookie('balance', balance, 365);
       }
-    }
-    function cashOut() {
-      const payout = investment * multiplier;
-      balance += payout;
-      investment = 0;
-      writeCookie(BALANCE_KEY, balance.toFixed(2));
-      updateDisplay();
-    }
-    function reInvest() {
-      const amt = Number(betInput.value) || 0;
-      if (amt > 0 && amt <= balance) {
-        balance -= amt;
-        investment += amt;
-        writeCookie(BALANCE_KEY, balance.toFixed(2));
-        updateDisplay();
-      }
-    }
-    function resetBalance() {
-      balance = 1000;
-      writeCookie(BALANCE_KEY, balance.toFixed(2));
-      updateDisplay();
+      updateBalanceDisplay();
     }
 
-    // Graph update: cumulative addition, random -10..+10
-    function updateGraph() {
-      const last = multipliers[multipliers.length - 1] ?? 0;
-      const change = Math.random() * 20 - 10; // -10..+10
-      const next = last + change;
-      multipliers.push(next);
-      multiplier = next;
-
-      // Only expand horizontal capacity when data truly exceeds normal view.
-      // If the number of points exceeds maxPoints, we increase maxPoints gradually
-      // so the graph will "squish" only when it gets too far to the right.
-      if (multipliers.length > maxPoints) {
-        maxPoints += 10;
-      }
-
-      drawCandles();
-      updateDisplay();
+    function updateBalanceDisplay() {
+      balanceSpan.textContent = balance.toFixed(2);
     }
 
-    // Draw candles with vertical scale starting at ±MIN_VERTICAL and expanding as needed.
-    function drawCandles() {
+    function saveBalance() {
+      setCookie('balance', balance, 365);
+      updateBalanceDisplay();
+    }
+
+    // ---------- Price / candles ----------
+    function randomCandle(prevClose) {
+      // simple random walk with some volatility
+      const vol = 1.5; // tweak for more/less chaos
+      const open = prevClose;
+      const move = (Math.random() - 0.5) * vol * 2;
+      let close = Math.max(1, open + move);
+
+      // high/low around open/close
+      const high = Math.max(open, close) + Math.random() * vol;
+      const low = Math.max(1, Math.min(open, close) - Math.random() * vol);
+
+      return {
+        o: parseFloat(open.toFixed(2)),
+        h: parseFloat(high.toFixed(2)),
+        l: parseFloat(low.toFixed(2)),
+        c: parseFloat(close.toFixed(2))
+      };
+    }
+
+    function stepCandle() {
+      const prevClose = candles.length ? candles[candles.length - 1].c : currentPrice;
+      const candle = randomCandle(prevClose);
+      candles.push(candle);
+      currentPrice = candle.c;
+      updatePriceDisplay();
+      updateLastCandleInfo(candle);
+      drawChart();
+      updateUnrealized();
+    }
+
+    function updatePriceDisplay() {
+      priceSpan.textContent = currentPrice.toFixed(2);
+    }
+
+    function updateLastCandleInfo(c) {
+      oVal.textContent = c.o.toFixed(2);
+      hVal.textContent = c.h.toFixed(2);
+      lVal.textContent = c.l.toFixed(2);
+      cVal.textContent = c.c.toFixed(2);
+    }
+
+    // ---------- Chart drawing ----------
+    function drawChart() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!candles.length) return;
+
+      const padding = 20;
       const w = canvas.width;
       const h = canvas.height;
 
-      // Horizontal: normal until count > maxPoints, then squish to fit
-      const count = multipliers.length;
-      const visibleSlots = Math.max(maxPoints, count);
-      const step = w / visibleSlots;
-      const candleWidth = Math.max(2, step * 0.6);
+      const minPrice = Math.min(...candles.map(c => c.l));
+      const maxPrice = Math.max(...candles.map(c => c.h));
+      const priceRange = maxPrice - minPrice || 1;
 
-      // Vertical scale: start at ±MIN_VERTICAL, expand to max absolute value seen
-      const maxAbs = Math.max(MIN_VERTICAL, ...multipliers.map(v => Math.abs(v)));
+      const candleWidth = Math.max(4, (w - padding * 2) / Math.max(30, candles.length));
+      const offsetX = w - padding - candleWidth * candles.length;
 
-      // Draw center line (0)
-      ctx.strokeStyle = '#444';
+      // grid line
+      ctx.strokeStyle = '#1f2937';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(0, h / 2);
-      ctx.lineTo(w, h / 2);
+      ctx.moveTo(padding, padding);
+      ctx.lineTo(padding, h - padding);
+      ctx.lineTo(w - padding, h - padding);
       ctx.stroke();
 
-      // Optional grid labels for top, 0, bottom
-      ctx.fillStyle = '#888';
-      ctx.font = '12px system-ui, Arial';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-      ctx.fillText('+' + maxAbs.toFixed(0), 6, 6);
-      ctx.textBaseline = 'middle';
-      ctx.fillText('0', 6, h / 2);
-      ctx.textBaseline = 'bottom';
-      ctx.fillText('-' + maxAbs.toFixed(0), 6, h - 6);
+      candles.forEach((c, i) => {
+        const xCenter = offsetX + i * candleWidth + candleWidth / 2;
 
-      // Draw candles
-      for (let i = 1; i < count; i++) {
-        const x = i * step;
-        const prev = multipliers[i - 1];
-        const curr = multipliers[i];
+        const yHigh = mapPriceToY(c.h, minPrice, priceRange, h, padding);
+        const yLow = mapPriceToY(c.l, minPrice, priceRange, h, padding);
+        const yOpen = mapPriceToY(c.o, minPrice, priceRange, h, padding);
+        const yClose = mapPriceToY(c.c, minPrice, priceRange, h, padding);
 
-        // Map value to canvas Y (top = -maxAbs, bottom = +maxAbs)
-        const yPrev = h / 2 - (prev / maxAbs) * (h / 2);
-        const yCurr = h / 2 - (curr / maxAbs) * (h / 2);
+        const isUp = c.c >= c.o;
+        const color = isUp ? '#22c55e' : '#ef4444';
 
-        const top = Math.min(yPrev, yCurr);
-        const bottom = Math.max(yPrev, yCurr);
-        ctx.fillStyle = curr >= prev ? getComputedStyle(document.documentElement).getPropertyValue('--up') || '#00ff7f' : getComputedStyle(document.documentElement).getPropertyValue('--down') || '#ff4d4d';
-        ctx.fillRect(x - candleWidth / 2, top, candleWidth, Math.max(1, bottom - top));
+        // wick
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(xCenter, yHigh);
+        ctx.lineTo(xCenter, yLow);
+        ctx.stroke();
+
+        // body
+        const bodyTop = Math.min(yOpen, yClose);
+        const bodyBottom = Math.max(yOpen, yClose);
+        const bodyHeight = Math.max(2, bodyBottom - bodyTop);
+
+        ctx.fillStyle = color;
+        ctx.fillRect(xCenter - candleWidth / 2 + 1, bodyTop, candleWidth - 2, bodyHeight);
+      });
+    }
+
+    function mapPriceToY(price, minPrice, range, height, padding) {
+      const normalized = (price - minPrice) / range;
+      return height - padding - normalized * (height - padding * 2);
+    }
+
+    // ---------- Trading ----------
+    function updatePositionDisplay() {
+      sharesSpan.textContent = shares;
+      avgCostSpan.textContent = shares > 0 ? avgCost.toFixed(2) : '0';
+      updateUnrealized();
+    }
+
+    function updateUnrealized() {
+      const unrealized = shares * (currentPrice - avgCost);
+      unrealizedSpan.textContent = unrealized.toFixed(2);
+    }
+
+    function buy() {
+      const qty = parseInt(qtyInput.value, 10);
+      if (isNaN(qty) || qty <= 0) {
+        statusDiv.textContent = 'Enter a valid quantity.';
+        return;
       }
+      const cost = qty * currentPrice;
+      if (cost > balance) {
+        statusDiv.textContent = 'Not enough balance to buy.';
+        return;
+      }
+      // update balance
+      balance -= cost;
+      saveBalance();
+
+      // update position (weighted average)
+      const totalCostBefore = shares * avgCost;
+      shares += qty;
+      avgCost = (totalCostBefore + cost) / shares;
+
+      updatePositionDisplay();
+      statusDiv.textContent = `Bought ${qty} @ $${currentPrice.toFixed(2)}.`;
     }
 
-    // Wire up buttons
-    betBtn.addEventListener('click', placeBet);
-    cashBtn.addEventListener('click', cashOut);
-    reBtn.addEventListener('click', reInvest);
-    resetBtn.addEventListener('click', () => {
-      if (confirm('Reset balance to 1000?')) resetBalance();
-    });
+    function sell() {
+      const qty = parseInt(qtyInput.value, 10);
+      if (isNaN(qty) || qty <= 0) {
+        statusDiv.textContent = 'Enter a valid quantity.';
+        return;
+      }
+      if (qty > shares) {
+        statusDiv.textContent = 'You do not have that many shares.';
+        return;
+      }
+      const proceeds = qty * currentPrice;
+      balance += proceeds;
+      saveBalance();
 
-    // Initialize
-    updateDisplay();
-    drawCandles();
-    const interval = setInterval(updateGraph, UPDATE_MS);
+      // realize P/L by reducing position
+      const remainingShares = shares - qty;
+      if (remainingShares === 0) {
+        shares = 0;
+        avgCost = 0;
+      } else {
+        shares = remainingShares;
+        // avgCost stays the same for remaining shares
+      }
 
-    // Make canvas responsive on resize
-    function resizeCanvas() {
-      // keep CSS size but update internal resolution for crispness
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = Math.round(rect.width * devicePixelRatio);
-      canvas.height = Math.round(rect.height * devicePixelRatio);
-      ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
-      drawCandles();
+      updatePositionDisplay();
+      statusDiv.textContent = `Sold ${qty} @ $${currentPrice.toFixed(2)}.`;
     }
-    // initial resize (canvas has width/height attributes but ensure devicePixelRatio)
-    window.addEventListener('resize', resizeCanvas);
-    // call once to set proper resolution
-    resizeCanvas();
+
+    // ---------- Events ----------
+    buyBtn.addEventListener('click', buy);
+    sellBtn.addEventListener('click', sell);
+    nextBtn.addEventListener('click', stepCandle);
+
+    // ---------- Boot ----------
+    function init() {
+      initBalance();
+      // seed first candle
+      const first = randomCandle(currentPrice);
+      candles.push(first);
+      currentPrice = first.c;
+      updatePriceDisplay();
+      updateLastCandleInfo(first);
+      drawChart();
+      updatePositionDisplay();
+      statusDiv.textContent = 'Welcome. Trade and step time with Next Candle.';
+    }
+
+    init();
   </script>
 </body>
-
 </html>
