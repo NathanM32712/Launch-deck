@@ -1,1 +1,71 @@
+{
+  "recipes": [
 
+    { "inputs": { "sand":1 }, "conditions": { "temperature-min":1700 }, "outputs": { "glass":1 } },
+    { "inputs": { "sand":1, "water":1 }, "conditions": {}, "outputs": { "wet-sand":1 } },
+    { "inputs": { "wet-sand":1 }, "conditions": { "temperature-min":100 }, "outputs": { "mud":1 } },
+    { "inputs": { "sand":1, "clay":1 }, "conditions": {}, "outputs": { "cement":1 } },
+    { "inputs": { "cement":1, "water":1 }, "conditions": {}, "outputs": { "cement-paste":1 } },
+
+    { "inputs": { "cement-paste":1, "gravel":1 }, "conditions": {}, "outputs": { "concrete-wet":1 } },
+    { "inputs": { "concrete-wet":1 }, "conditions": { "time":5 }, "outputs": { "concrete":1 } },
+    { "inputs": { "sand":1, "gravel":1 }, "conditions": {}, "outputs": { "rock":1 } },
+    { "inputs": { "rock":1 }, "conditions": { "temperature-min":1200 }, "outputs": { "basalt":1 } },
+    { "inputs": { "rock":1 }, "conditions": { "pressure":1 }, "outputs": { "granite":1 } },
+
+    { "inputs": { "sand":1, "salt":1 }, "conditions": {}, "outputs": { "dust":1 } },
+    { "inputs": { "dust":1 }, "conditions": { "temperature-min":300 }, "outputs": { "ash":1 } },
+    { "inputs": { "ash":1 }, "conditions": { "temperature-min":800 }, "outputs": { "slag":1 } },
+    { "inputs": { "slag":1 }, "conditions": { "temperature-min":1500 }, "outputs": { "molten-metal":1 } },
+    { "inputs": { "molten-metal":1 }, "conditions": { "cool":1 }, "outputs": { "metal":1 } },
+
+    { "inputs": { "metal":1, "carbon":1 }, "conditions": { "temperature-min":1500 }, "outputs": { "steel":1 } },
+    { "inputs": { "metal":1, "oxygen":1 }, "conditions": {}, "outputs": { "metal-oxide":1 } },
+    { "inputs": { "metal-oxide":1 }, "conditions": { "temperature-min":900 }, "outputs": { "rust":1 } },
+    { "inputs": { "rust":1 }, "conditions": { "temperature-min":1600 }, "outputs": { "molten-metal":1 } },
+    { "inputs": { "metal":1, "tin":1 }, "conditions": { "temperature-min":1000 }, "outputs": { "bronze":1 } },
+
+    { "inputs": { "metal":1, "zinc":1 }, "conditions": { "temperature-min":900 }, "outputs": { "brass":1 } },
+    { "inputs": { "metal":1, "lead":1 }, "conditions": { "temperature-min":330 }, "outputs": { "solder":1 } },
+    { "inputs": { "metal":1 }, "conditions": { "temperature-min":1100 }, "outputs": { "wire":1 } },
+    { "inputs": { "wire":1 }, "conditions": { "electricity":1 }, "outputs": { "electricity":1 } },
+    { "inputs": { "electricity":1 }, "conditions": { "temperature-min":3000 }, "outputs": { "plasma":1 } },
+
+    { "inputs": { "sand":1, "lava":1 }, "conditions": {}, "outputs": { "obsidian":1 } },
+    { "inputs": { "obsidian":1 }, "conditions": { "temperature-min":2000 }, "outputs": { "molten-glass":1 } },
+    { "inputs": { "molten-glass":1 }, "conditions": { "cool":1 }, "outputs": { "glass":1 } },
+    { "inputs": { "glass":1 }, "conditions": { "temperature-min":800 }, "outputs": { "molten-glass":1 } },
+    { "inputs": { "glass":1, "sand":1 }, "conditions": {}, "outputs": { "gravel":1 } },
+
+    { "inputs": { "sand":1, "oil":1 }, "conditions": {}, "outputs": { "tar":1 } },
+    { "inputs": { "tar":1 }, "conditions": { "temperature-min":500 }, "outputs": { "sludge":1 } },
+    { "inputs": { "sludge":1, "toxic-gas":1 }, "conditions": {}, "outputs": { "toxic-sludge":1 } },
+    { "inputs": { "sludge":1 }, "conditions": { "temperature-min":200 }, "outputs": { "goo":1 } },
+    { "inputs": { "goo":1 }, "conditions": { "temperature-min":300 }, "outputs": { "foam":1 } },
+
+    { "inputs": { "sand":1, "dye":1 }, "conditions": {}, "outputs": { "paint":1 } },
+    { "inputs": { "paint":1 }, "conditions": { "temperature-min":200 }, "outputs": { "ink":1 } },
+    { "inputs": { "ink":1 }, "conditions": { "temperature-min":300 }, "outputs": { "soot":1 } },
+    { "inputs": { "soot":1 }, "conditions": { "temperature-min":800 }, "outputs": { "ash":1 } },
+    { "inputs": { "ash":1, "water":1 }, "conditions": {}, "outputs": { "mud":1 } },
+
+    { "inputs": { "sand":1, "plant":1 }, "conditions": {}, "outputs": { "soil":1 } },
+    { "inputs": { "soil":1 }, "conditions": { "temperature-min":200 }, "outputs": { "dirt":1 } },
+    { "inputs": { "dirt":1 }, "conditions": { "temperature-min":1000 }, "outputs": { "clay":1 } },
+    { "inputs": { "clay":1 }, "conditions": { "temperature-min":1200 }, "outputs": { "brick":1 } },
+    { "inputs": { "brick":1 }, "conditions": { "temperature-min":1500 }, "outputs": { "clinker":1 } },
+
+    { "inputs": { "sand":1, "snow":1 }, "conditions": {}, "outputs": { "ice":1 } },
+    { "inputs": { "ice":1 }, "conditions": { "temperature-min":0 }, "outputs": { "water":1 } },
+    { "inputs": { "water":1 }, "conditions": { "temperature-min":100 }, "outputs": { "steam":1 } },
+    { "inputs": { "steam":1 }, "conditions": { "cool":1 }, "outputs": { "water":1 } },
+    { "inputs": { "steam":1, "dust":1 }, "conditions": {}, "outputs": { "cloud":1 } },
+
+    { "inputs": { "sand":1, "fire":1 }, "conditions": {}, "outputs": { "glass":1 } },
+    { "inputs": { "sand":1, "electricity":1 }, "conditions": {}, "outputs": { "plasma":1 } },
+    { "inputs": { "sand":1, "acid":1 }, "conditions": {}, "outputs": { "sludge":1 } },
+    { "inputs": { "sand":1, "metal":1 }, "conditions": {}, "outputs": { "gravel":1 } },
+    { "inputs": { "sand":1, "coal":1 }, "conditions": {}, "outputs": { "soot":1 } }
+
+  ]
+}
