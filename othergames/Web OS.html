@@ -1,627 +1,188 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8" />
-  <title>Mini OS Launcher — Tabs, Fullscreen, HTML Files</title>
-  <link rel="icon" type="image/png" href="icon.png" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    :root{--accent:#0b84ff;--bg:#0f1720;--panel:#0b1220;--muted:#9aa7b2}
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
-      background:linear-gradient(180deg,#071021 0%,#0b1220 100%);
-      color:#e6eef6;
-      height:100vh;
-      display:flex;
-      gap:12px;
-      padding:12px;
-    }
-    .sidebar{
-      width:320px;
-      background:var(--panel);
-      padding:12px;
-      border-radius:8px;
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-      box-shadow:0 6px 18px rgba(2,6,23,.6)
-    }
-    .main{flex:1;display:flex;flex-direction:column;gap:12px}
-    .panel{background:#071428;padding:12px;border-radius:8px}
-    h2{margin:0 0 8px 0;font-size:16px}
-    a.game{
-      display:block;
-      padding:8px;
-      border-radius:6px;
-      color:#dff0ff;
-      text-decoration:none;
-      background:linear-gradient(90deg,rgba(255,255,255,.02),transparent);
-      margin-bottom:6px
-    }
-    .controls{display:flex;gap:8px;flex-wrap:wrap}
-    button{
-      background:var(--accent);
-      border:none;
-      color:white;
-      padding:8px 10px;
-      border-radius:6px;
-      cursor:pointer
-    }
-    button.ghost{background:transparent;border:1px solid rgba(255,255,255,.06)}
-    input,textarea,select{
-      width:100%;
-      padding:8px;
-      border-radius:6px;
-      border:1px solid rgba(255,255,255,.04);
-      background:transparent;
-      color:inherit
-    }
-    .file-list{max-height:160px;overflow:auto}
-    .muted{color:var(--muted);font-size:13px}
-    .row{display:flex;gap:8px}
-    /* Tabs */
-    .tabbar{
-      display:flex;
-      gap:6px;
-      align-items:center;
-      overflow:auto;
-      padding:6px;
-      border-radius:6px;
-      background:linear-gradient(90deg,rgba(255,255,255,.01),transparent)
-    }
-    .tab{
-      display:flex;
-      align-items:center;
-      gap:6px;
-      padding:6px 10px;
-      border-radius:6px;
-      background:transparent;
-      color:#cfeeff;
-      border:1px solid transparent;
-      cursor:pointer;
-      white-space:nowrap
-    }
-    .tab.active{
-      background:linear-gradient(90deg,rgba(255,255,255,.03),transparent);
-      border-color:rgba(255,255,255,.04)
-    }
-    .tab button.icon{
-      background:transparent;
-      border:none;
-      color:#9aa7b2;
-      cursor:pointer;
-      padding:0 2px;
-      font-size:14px;
-    }
-    .tab button.icon:hover{color:#ffffff}
-    .viewer-wrap{flex:1;display:flex;flex-direction:column;gap:8px}
-    .address-row{display:flex;gap:8px;align-items:center}
-    .address-row input[type="text"]{flex:1}
-    .iframes{flex:1;position:relative}
-    .iframe-wrapper{position:absolute;inset:0;border-radius:8px;overflow:hidden}
-    .iframe-wrapper iframe{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      border-radius:8px;
-      border:1px solid rgba(255,255,255,.04)
-    }
-    .small{padding:6px 8px;font-size:13px}
-  </style>
+    <title>Sandboxels Tabs</title>
+    <link rel="icon" href="../icon.png">
+    <style>
+        body {
+            margin: 0;
+            background: #111;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        #topbar {
+            display: flex;
+            align-items: center;
+            background: #222;
+            padding: 6px;
+            border-bottom: 2px solid #333;
+        }
+
+        #backbtn {
+            width: 28px;
+            height: 28px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        #newtab {
+            flex: 1;
+            padding: 6px;
+            border: none;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        #tabs {
+            display: flex;
+            background: #181818;
+            border-bottom: 2px solid #333;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .tab {
+            padding: 8px 14px;
+            cursor: pointer;
+            background: #222;
+            border-right: 1px solid #333;
+        }
+
+        .tab.active {
+            background: #333;
+            font-weight: bold;
+        }
+
+        #framebox {
+            width: 100%;
+            height: calc(100vh - 90px);
+            background: #000;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        #error {
+            display: none;
+            padding: 20px;
+            text-align: center;
+            color: #ff5555;
+            font-size: 20px;
+        }
+    </style>
 </head>
 <body>
-  <aside class="sidebar panel">
-    <h2>Games</h2>
-    <div id="games">
-      <a class="game" href="#" data-src="https://example.com">Example Game (demo)</a>
-      <a class="game" href="#" data-src="https://classicreload.com">ClassicReload</a>
-      <a class="game" href="#" data-src="https://archive.org/details/softwarelibrary_msdos_games">Internet Archive Games</a>
+
+    <div id="topbar">
+        <img id="backbtn" src="../icon.png" onclick="location.href='../launch-deck.html'">
+        <input id="newtab" placeholder="Type a link and press Enter">
     </div>
 
-    <h2>File Manager</h2>
-    <div>
-      <label class="muted">Filename</label>
-      <input id="filename" placeholder="myfile.txt or mypage.html" />
-      <label class="muted">Content</label>
-      <textarea id="filecontent" rows="6" placeholder="Type or paste text here"></textarea>
-      <div class="controls">
-        <button id="saveFile">Save File</button>
-        <button id="openFile" class="ghost">Open Selected</button>
-        <button id="deleteFile" class="ghost">Delete Selected</button>
-      </div>
-      <div style="margin-top:8px">
-        <label class="muted">Saved Files</label>
-        <select id="fileSelect" size="6" class="file-list" style="width:100%"></select>
-      </div>
+    <div id="tabs"></div>
+
+    <div id="framebox">
+        <iframe id="viewer"></iframe>
+        <div id="error">Sorry, this site can’t be reached or is blocked from loading in an iframe.</div>
     </div>
-
-    <div style="margin-top:auto">
-      <div class="controls">
-        <button id="resetBtn">Reset OS</button>
-        <button id="exportBtn" class="ghost">Export Files</button>
-      </div>
-      <p class="muted" style="margin-top:8px">
-        Files stored in localStorage; tabs stored in localStorage; reset clears everything.
-      </p>
-    </div>
-  </aside>
-
-  <main class="main">
-    <div class="panel" style="display:flex;flex-direction:column;gap:8px">
-      <div style="display:flex;align-items:center;gap:12px">
-        <div style="flex:1">
-          <h2>Viewer</h2>
-          <p class="muted">
-            Tabs show real titles when allowed; otherwise the URL without https://. HTML files open in new tabs.
-          </p>
-        </div>
-
-        <div style="width:360px">
-          <label class="muted">Open URL</label>
-          <div class="row">
-            <input id="openUrl" placeholder="https://..." />
-            <button id="openUrlBtn">Open</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="tabbar panel" id="tabbar">
-        <!-- tabs inserted here -->
-        <div style="margin-left:auto;display:flex;gap:8px">
-          <button id="newTabBtn" class="ghost small">New Blank Tab</button>
-          <button id="closeAllBtn" class="ghost small">Close All Tabs</button>
-        </div>
-      </div>
-
-      <div class="panel address-row" id="addressPanel">
-        <input id="tabAddress" type="text" placeholder="Enter URL or edit current tab address" />
-        <button id="goBtn" class="small">Go</button>
-        <input id="searchInput" type="text" placeholder="Search (Enter or Search)" style="width:260px" />
-        <label style="display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px">
-          <input id="siteOnly" type="checkbox" /> <span>Search current site</span>
-        </label>
-        <button id="searchBtn" class="small">Search</button>
-      </div>
-    </div>
-
-    <div class="panel viewer-wrap">
-      <div class="iframes" id="iframes">
-        <div style="color:#9aa7b2;padding:20px">No tabs open. Open a game, URL, or .html file to create a tab.</div>
-      </div>
-    </div>
-  </main>
 
 <script>
-/* --- Storage keys --- */
-const INDEX_FILES = 'os_files_index_v1';
-const FILE_PREFIX = 'os_file:';
-const TABS_KEY = 'os_tabs_v1';
+    const tabs = document.getElementById("tabs");
+    const viewer = document.getElementById("viewer");
+    const errorBox = document.getElementById("error");
 
-/* --- Cookie helpers (kept minimal; using localStorage for files/tabs) --- */
-/* Files: index + content in localStorage */
-function loadFileIndex(){
-  try{
-    const raw = localStorage.getItem(INDEX_FILES);
-    return raw ? JSON.parse(raw) : [];
-  }catch(e){ return []; }
-}
-function saveFileIndex(index){
-  localStorage.setItem(INDEX_FILES, JSON.stringify(index));
-}
-function addFile(name, content){
-  const index = loadFileIndex();
-  if(!index.includes(name)) index.push(name);
-  localStorage.setItem(FILE_PREFIX + name, content);
-  saveFileIndex(index);
-}
-function removeFile(name){
-  const index = loadFileIndex().filter(n => n !== name);
-  localStorage.removeItem(FILE_PREFIX + name);
-  saveFileIndex(index);
-}
-function readFile(name){
-  return localStorage.getItem(FILE_PREFIX + name);
-}
+    // -----------------------------
+    // COOKIE HANDLING
+    // -----------------------------
+    function saveCookie(data) {
+        document.cookie = "tabBrowser=" + encodeURIComponent(JSON.stringify(data)) + "; path=/; max-age=31536000";
+    }
 
-/* --- Tabs state --- */
-let tabs = []; // {id, url, title, isHtmlBlob, fileName}
-let activeTabId = null;
-
-/* --- UI elements --- */
-const gamesEl = document.getElementById('games');
-const tabbar = document.getElementById('tabbar');
-const iframesWrap = document.getElementById('iframes');
-const openUrlInput = document.getElementById('openUrl');
-const fileSelect = document.getElementById('fileSelect');
-const filenameInput = document.getElementById('filename');
-const filecontent = document.getElementById('filecontent');
-const tabAddress = document.getElementById('tabAddress');
-const goBtn = document.getElementById('goBtn');
-const searchInput = document.getElementById('searchInput');
-const searchBtn = document.getElementById('searchBtn');
-const siteOnly = document.getElementById('siteOnly');
-
-/* --- Helpers --- */
-function saveTabs(){
-  localStorage.setItem(TABS_KEY, JSON.stringify({tabs, activeTabId}));
-}
-function loadTabs(){
-  try{
-    const raw = localStorage.getItem(TABS_KEY);
-    if(!raw) return;
-    const s = JSON.parse(raw);
-    tabs = s.tabs || [];
-    activeTabId = s.activeTabId || (tabs[0] && tabs[0].id) || null;
-  }catch(e){
-    tabs = [];
-    activeTabId = null;
-  }
-}
-function makeId(){ return 't_' + Math.random().toString(36).slice(2,9); }
-function normalizeUrl(u){
-  try{ return new URL(u).href; }catch(e){
-    try{ return new URL('https://' + u).href; }catch(e2){ return null; }
-  }
-}
-function hostnameOf(url){
-  try{ return new URL(url).hostname; }catch(e){ return ''; }
-}
-function cleanUrlLabel(url){
-  if(!url) return '';
-  return url.replace(/^https?:\/\//i,'');
-}
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, c => (
-    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
-  ));
-}
-
-/* --- Tab rendering --- */
-function renderTabbar(){
-  const actions = tabbar.querySelector('div[style*="margin-left:auto"]');
-  tabbar.innerHTML = '';
-  tabs.forEach(t => {
-    const el = document.createElement('div');
-    el.className = 'tab' + (t.id === activeTabId ? ' active' : '');
-    el.dataset.id = t.id;
-
-    const titleSpan = document.createElement('span');
-    titleSpan.className = 'title';
-    titleSpan.textContent = t.title || cleanUrlLabel(t.url) || 'New Tab';
-    el.appendChild(titleSpan);
-
-    const fsBtn = document.createElement('button');
-    fsBtn.className = 'icon';
-    fsBtn.title = 'Fullscreen';
-    fsBtn.textContent = '⤢';
-    fsBtn.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      fullscreenTab(t.id);
-    });
-    el.appendChild(fsBtn);
-
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'icon';
-    closeBtn.title = 'Close tab';
-    closeBtn.textContent = '✕';
-    closeBtn.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      closeTab(t.id);
-    });
-    el.appendChild(closeBtn);
-
-    el.addEventListener('click', () => activateTab(t.id));
-    tabbar.appendChild(el);
-  });
-
-  const actionsWrap = document.createElement('div');
-  actionsWrap.style.marginLeft = 'auto';
-  actionsWrap.style.display = 'flex';
-  actionsWrap.style.gap = '8px';
-  actionsWrap.innerHTML = `
-    <button id="newTabBtnInner" class="ghost small">New Blank Tab</button>
-    <button id="closeAllBtnInner" class="ghost small">Close All Tabs</button>
-  `;
-  tabbar.appendChild(actionsWrap);
-  document.getElementById('newTabBtnInner').addEventListener('click', () => createTab('about:blank','New Tab'));
-  document.getElementById('closeAllBtnInner').addEventListener('click', closeAllTabs);
-}
-
-function renderIframes(){
-  iframesWrap.innerHTML = '';
-  if(tabs.length === 0){
-    const hint = document.createElement('div');
-    hint.style.color = '#9aa7b2';
-    hint.style.padding = '20px';
-    hint.textContent = 'No tabs open. Open a game, URL, or .html file to create a tab.';
-    iframesWrap.appendChild(hint);
-    return;
-  }
-  tabs.forEach(t => {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'iframe-wrapper';
-    wrapper.style.display = (t.id === activeTabId ? 'block' : 'none');
-
-    const frame = document.createElement('iframe');
-    frame.id = 'frame_' + t.id;
-    frame.dataset.id = t.id;
-    frame.src = t.url;
-    frame.addEventListener('load', () => {
-      // Try to get real title; if blocked, fallback
-      try{
-        const doc = frame.contentDocument || frame.contentWindow.document;
-        const title = doc && doc.title;
-        if(title && !t.isHtmlBlob){ // for remote pages
-          t.title = title;
-          saveTabs();
-          renderTabbar();
+    function loadCookie() {
+        const match = document.cookie.match(/tabBrowser=([^;]+)/);
+        if (!match) return null;
+        try {
+            return JSON.parse(decodeURIComponent(match[1]));
+        } catch {
+            return null;
         }
-      }catch(e){
-        // cross-origin; keep existing title or fallback
-        if(!t.title){
-          t.title = cleanUrlLabel(t.url);
-          saveTabs();
-          renderTabbar();
+    }
+
+    let state = loadCookie() || {
+        tabs: ["https://sandboxels.r74n.com/"],
+        active: 0
+    };
+
+    function updateCookie() {
+        saveCookie(state);
+    }
+
+    // -----------------------------
+    // TAB SYSTEM
+    // -----------------------------
+    function addTab(url, skipSave) {
+        state.tabs.push(url);
+        if (!skipSave) updateCookie();
+        renderTabs();
+        switchTab(state.tabs.length - 1);
+    }
+
+    function renderTabs() {
+        tabs.innerHTML = "";
+        state.tabs.forEach((url, i) => {
+            const tab = document.createElement("div");
+            tab.className = "tab";
+            tab.textContent = url;
+            if (i === state.active) tab.classList.add("active");
+            tab.onclick = () => switchTab(i);
+            tabs.appendChild(tab);
+        });
+    }
+
+    function switchTab(index) {
+        state.active = index;
+        updateCookie();
+
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        tabs.children[index].classList.add("active");
+
+        errorBox.style.display = "none";
+        viewer.style.display = "block";
+
+        const url = state.tabs[index];
+        viewer.src = url;
+
+        viewer.onload = () => {
+            try {
+                let test = viewer.contentWindow.location.href;
+            } catch {
+                viewer.style.display = "none";
+                errorBox.style.display = "block";
+            }
+        };
+    }
+
+    // -----------------------------
+    // NEW TAB INPUT
+    // -----------------------------
+    document.getElementById("newtab").addEventListener("keydown", e => {
+        if (e.key === "Enter") {
+            let url = e.target.value.trim();
+            if (!url.startsWith("http")) url = "https://" + url;
+            addTab(url);
+            e.target.value = "";
         }
-      }
     });
-    wrapper.appendChild(frame);
-    iframesWrap.appendChild(wrapper);
-  });
-}
 
-/* --- Tab operations --- */
-function createTab(url, title, opts={}){
-  const id = makeId();
-  const tab = {
-    id,
-    url: url || 'about:blank',
-    title: title || cleanUrlLabel(url) || 'New Tab',
-    isHtmlBlob: !!opts.isHtmlBlob,
-    fileName: opts.fileName || null
-  };
-  tabs.push(tab);
-  activeTabId = id;
-  saveTabs();
-  renderTabbar();
-  renderIframes();
-  updateAddressPanel();
-}
-
-function activateTab(id){
-  activeTabId = id;
-  saveTabs();
-  document.querySelectorAll('.tab').forEach(el => el.classList.toggle('active', el.dataset.id === id));
-  document.querySelectorAll('.iframe-wrapper').forEach(w => {
-    const frame = w.querySelector('iframe');
-    w.style.display = (frame && frame.dataset.id === id ? 'block' : 'none');
-  });
-  updateAddressPanel();
-}
-
-function closeTab(id){
-  const idx = tabs.findIndex(t => t.id === id);
-  if(idx === -1) return;
-  const frame = document.getElementById('frame_' + id);
-  if(frame){
-    try{ frame.src = 'about:blank'; }catch(e){}
-    const parent = frame.parentElement;
-    if(parent) parent.remove();
-  }
-  tabs.splice(idx,1);
-  if(activeTabId === id){
-    activeTabId = tabs[idx] ? tabs[idx].id : (tabs[idx-1] ? tabs[idx-1].id : null);
-  }
-  saveTabs();
-  renderTabbar();
-  renderIframes();
-  updateAddressPanel();
-}
-
-function closeAllTabs(){
-  if(!confirm('Close all tabs? This will stop all running iframes.')) return;
-  document.querySelectorAll('#iframes iframe').forEach(frame => {
-    try{ frame.src = 'about:blank'; }catch(e){}
-    const parent = frame.parentElement;
-    if(parent) parent.remove();
-  });
-  tabs = [];
-  activeTabId = null;
-  saveTabs();
-  renderTabbar();
-  renderIframes();
-  updateAddressPanel();
-}
-
-function fullscreenTab(id){
-  const frame = document.getElementById('frame_' + id);
-  if(!frame) return;
-  if(frame.requestFullscreen){
-    frame.requestFullscreen();
-  }else if(frame.webkitRequestFullscreen){
-    frame.webkitRequestFullscreen();
-  }else if(frame.msRequestFullscreen){
-    frame.msRequestFullscreen();
-  }
-}
-
-/* --- Address & Search --- */
-function updateAddressPanel(){
-  const active = tabs.find(t => t.id === activeTabId);
-  tabAddress.value = active ? active.url : '';
-  siteOnly.checked = !!active;
-}
-
-goBtn.addEventListener('click', () => {
-  const raw = tabAddress.value.trim();
-  if(!raw) return;
-  const normalized = normalizeUrl(raw);
-  if(!normalized){ alert('Invalid URL'); return; }
-  if(!activeTabId){
-    createTab(normalized, cleanUrlLabel(normalized));
-  }else{
-    const t = tabs.find(x => x.id === activeTabId);
-    if(t){
-      t.url = normalized;
-      t.title = cleanUrlLabel(normalized);
-      t.isHtmlBlob = false;
-      t.fileName = null;
-    }
-    const frame = document.getElementById('frame_' + activeTabId);
-    if(frame) frame.src = normalized;
-    saveTabs();
-    renderTabbar();
-  }
-});
-tabAddress.addEventListener('keydown', (e) => { if(e.key === 'Enter') goBtn.click(); });
-
-function performSearch(){
-  const q = searchInput.value.trim();
-  if(!q) return;
-  let searchUrl;
-  if(siteOnly.checked && activeTabId){
-    const t = tabs.find(x => x.id === activeTabId);
-    const host = t ? hostnameOf(t.url) : '';
-    if(host){
-      searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent('site:' + host + ' ' + q);
-    }else{
-      searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(q);
-    }
-  }else{
-    searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(q);
-  }
-  if(activeTabId){
-    const t = tabs.find(x => x.id === activeTabId);
-    if(t){
-      t.url = searchUrl;
-      t.title = 'Search: ' + q;
-      t.isHtmlBlob = false;
-      t.fileName = null;
-    }
-    const frame = document.getElementById('frame_' + activeTabId);
-    if(frame) frame.src = searchUrl;
-    saveTabs();
-    renderTabbar();
-  }else{
-    createTab(searchUrl, 'Search: ' + q);
-  }
-}
-searchBtn.addEventListener('click', performSearch);
-searchInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') performSearch(); });
-
-/* --- Games & URL open --- */
-gamesEl.addEventListener('click', e => {
-  const a = e.target.closest('a.game');
-  if(!a) return;
-  e.preventDefault();
-  const src = a.dataset.src || a.href;
-  createTab(src, a.textContent.trim());
-});
-
-document.getElementById('openUrlBtn').addEventListener('click', () => {
-  const url = openUrlInput.value.trim();
-  if(!url) return;
-  const normalized = normalizeUrl(url);
-  if(!normalized){ alert('Invalid URL'); return; }
-  createTab(normalized, cleanUrlLabel(normalized));
-  openUrlInput.value = '';
-});
-
-/* --- File manager --- */
-function populateFiles(){
-  const index = loadFileIndex();
-  fileSelect.innerHTML = '';
-  index.forEach(name => {
-    const opt = document.createElement('option');
-    opt.value = name;
-    opt.textContent = name;
-    fileSelect.appendChild(opt);
-  });
-}
-populateFiles();
-
-document.getElementById('saveFile').addEventListener('click', () => {
-  const name = filenameInput.value.trim();
-  if(!name){ alert('Enter a filename'); return; }
-  const content = filecontent.value;
-  addFile(name, content);
-  populateFiles();
-  alert('Saved ' + name);
-});
-
-document.getElementById('openFile').addEventListener('click', () => {
-  const name = fileSelect.value;
-  if(!name){ alert('Select a file'); return; }
-  const content = readFile(name);
-  if(content == null){ alert('File content missing'); return; }
-
-  // If .html, open in new tab as HTML app
-  if(/\.html?$/i.test(name)){
-    const blob = new Blob([content], {type:'text/html'});
-    const url = URL.createObjectURL(blob);
-    createTab(url, name, {isHtmlBlob:true, fileName:name});
-  }else{
-    // Non-HTML: just load into editor
-    filenameInput.value = name;
-    filecontent.value = content || '';
-  }
-});
-
-document.getElementById('deleteFile').addEventListener('click', () => {
-  const name = fileSelect.value;
-  if(!name){ alert('Select a file'); return; }
-  if(!confirm('Delete ' + name + '?')) return;
-  removeFile(name);
-  populateFiles();
-});
-
-document.getElementById('exportBtn').addEventListener('click', () => {
-  const index = loadFileIndex();
-  const data = index.map(n => ({name:n, content: localStorage.getItem(FILE_PREFIX + n)}));
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'files-export.json';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-});
-
-/* --- Reset OS --- */
-document.getElementById('resetBtn').addEventListener('click', () => {
-  if(!confirm('Reset will clear files, tabs, and settings. Continue?')) return;
-  // clear files
-  const index = loadFileIndex();
-  index.forEach(name => localStorage.removeItem(FILE_PREFIX + name));
-  localStorage.removeItem(INDEX_FILES);
-  // clear tabs
-  localStorage.removeItem(TABS_KEY);
-  location.reload();
-});
-
-/* --- Top-level new tab / close all --- */
-document.getElementById('newTabBtn').addEventListener('click', () => createTab('about:blank','New Tab'));
-document.getElementById('closeAllBtn').addEventListener('click', closeAllTabs);
-
-/* --- Init --- */
-loadTabs();
-renderTabbar();
-renderIframes();
-if(activeTabId) activateTab(activeTabId);
-updateAddressPanel();
-
-fileSelect.addEventListener('change', () => {
-  const name = fileSelect.value;
-  if(name){
-    filenameInput.value = name;
-    filecontent.value = readFile(name) || '';
-  }
-});
+    // -----------------------------
+    // INITIAL LOAD
+    // -----------------------------
+    renderTabs();
+    switchTab(state.active);
 </script>
+
 </body>
 </html>
