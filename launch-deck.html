@@ -5,7 +5,7 @@
   <link rel="icon" type="image/png" href="icon.png" />
   <style>
     body {
-      background-color: #03031f;
+      background-color: #0f070a;
       color: white;
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
@@ -25,7 +25,7 @@
     }
     .title-bar h1 {
       margin: 0;
-      font-size: 48px;
+      font-size: 78px;
     }
     .tabs {
       display: flex;
@@ -36,7 +36,7 @@
     .tab {
       padding: 10px 20px;
       background: #222;
-      border-radius: 6px;
+      border-radius: 100px;
       cursor: pointer;
       transition: 0.2s;
     }
@@ -154,19 +154,16 @@ function getCookie(name) {
   return null;
 }
 
-/* ---------------- ZERO-BALANCE NEXT-DAY RESET ---------------- */
 function checkZeroReset() {
   let balance = parseInt(getCookie("balance") || "0");
   const zeroDate = getCookie("zeroDate");
   const today = new Date().toDateString();
 
-  // If balance hits 0 and no date saved → save today's date
   if (balance <= 0 && !zeroDate) {
     setCookie("zeroDate", today, 365);
     return;
   }
 
-  // If balance is 0 AND it's a new day → give $100
   if (balance <= 0 && zeroDate && zeroDate !== today) {
     balance = 100;
     setCookie("balance", balance, 365);
@@ -175,7 +172,6 @@ function checkZeroReset() {
     return;
   }
 
-  // If balance is above 0 → clear zeroDate
   if (balance > 0 && zeroDate) {
     setCookie("zeroDate", "", -1);
   }
@@ -183,7 +179,6 @@ function checkZeroReset() {
 
 checkZeroReset();
 
-/* ---------------- ADMIN SECRET ---------------- */
 let sequence = "";
 const target = "admin";
 
@@ -230,8 +225,3 @@ document.getElementById("adminSubmit").addEventListener("click", () => {
 
 </body>
 </html>
-
-
-
-
-
