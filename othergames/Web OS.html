@@ -123,9 +123,9 @@
     // -----------------------------
     // TAB SYSTEM
     // -----------------------------
-    function addTab(url, skipSave) {
+    function addTab(url) {
         state.tabs.push(url);
-        if (!skipSave) updateCookie();
+        updateCookie();
         renderTabs();
         switchTab(state.tabs.length - 1);
     }
@@ -149,19 +149,22 @@
         document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
         tabs.children[index].classList.add("active");
 
+        const url = state.tabs[index];
+
         errorBox.style.display = "none";
         viewer.style.display = "block";
 
-        const url = state.tabs[index];
         viewer.src = url;
 
+        // Correct iframe-block detection
         viewer.onload = () => {
-            try {
-                let test = viewer.contentWindow.location.href;
-            } catch {
-                viewer.style.display = "none";
-                errorBox.style.display = "block";
-            }
+            errorBox.style.display = "none";
+            viewer.style.display = "block";
+        };
+
+        viewer.onerror = () => {
+            viewer.style.display = "none";
+            errorBox.style.display = "block";
         };
     }
 
