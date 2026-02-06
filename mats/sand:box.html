@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sandbox</title>
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" href="../icon.png">
+
+<style>
+body{background:#111;color:#eee;font-family:sans-serif;margin:0;display:flex;height:100vh}
+#sidebar{width:220px;background:#181818;border-right:1px solid #333;display:flex;flex-direction:column}
+#materials{flex:1;overflow:auto;padding:5px}
+#materials button{width:100%;margin:2px 0;padding:4px 6px;background:#222;color:#eee;border:1px solid #444;text-align:left;cursor:pointer;font-size:12px}
+#materials button.admin-only{background:#331111;color:#f88}
+#topbar{padding:6px;border-bottom:1px solid #333;font-size:12px}
+#main{flex:1;display:flex;flex-direction:column}
+#log{flex:1;overflow:auto;padding:6px;font-size:12px;background:#000}
+#controls{padding:6px;border-top:1px solid #333;font-size:12px;display:flex;gap:6px;align-items:center}
+#controls input{background:#111;color:#eee;border:1px solid #444;padding:2px 4px;font-size:12px}
+#controls button{background:#222;color:#eee;border:1px solid #444;padding:3px 6px;font-size:12px;cursor:pointer}
+
+/* Back button */
+#backBtn{
+    position:fixed;
+    top:10px;
+    left:10px;
+    width:40px;
+    height:40px;
+    background-image:url('../icon.png');
+    background-size:contain;
+    background-repeat:no-repeat;
+    background-position:center;
+    cursor:pointer;
+    z-index:9999;
+}
+</style>
+</head>
+
+<body>
+
+<!-- Back button -->
+<a id="backBtn" href="../launch-deck"></a>
+
+<div id="sidebar">
+  <div id="topbar">
+    <div id="adminFlag"></div>
+    <div style="margin-top:4px;">Materials</div>
+  </div>
+  <div id="materials"></div>
+</div>
+
+<div id="main">
+  <div id="log"></div>
+  <div id="controls">
+    <span>Selected:</span>
+    <input id="selectedMat" readonly>
+    <button onclick="spawnSelected()">Spawn</button>
+    <button onclick="testCraft()">Test Craft</button>
+  </div>
+</div>
+
+<script>
+let MATERIALS={}, RECIPES=[], SHOWN={};
+let currentSelected=null;
+let sandbox={inventory:{},temperature:20};
+
+function isAdmin(){
+  return document.cookie.includes("admin=true");
+}
+
+async function loadJSON(path){
+  const r=await fetch(path);
+  return await r.json();
+}
+
+async function init(){
+  [MATERIALS,RECIPES,SHOWN]=await Promise.all([
+    loadJSON("materials.json"),
+    loadJSON("craft.json"),
+    loadJSON("shown.json")
+  ]);
+  buildMaterialList();
+  log("Sandbox ready. Admin: "+isAdmin());
+  document.getElementById("adminFlag").textContent=isAdmin()?"ADMIN MODE":"PLAYER MODE";
+}
+
+function buildMaterialList(){
+  const box=document.getElementById("materials");
+  box.innerHTML="";
+  const admin=isAdmin();
+  const allNames=Object.keys(MATERIALS).sort();
+  allNames.forEach(name=>{
+    const visible=admin || SHOWN[name];
+    if(!visible) return;
+    const btn=document.createElement("button");
+    btn.textContent=name;
+    if(!SHOWN[name] && admin) btn.classList.add("admin-only");
+    btn.onclick=()=>selectMaterial(name);
+    box.appendChild(btn);
+  });
+}
+
+function selectMaterial(name){
+  currentSelected=name;
+  document.getElementById("selectedMat").value=name;
+  log("Selected: "+name);
+}
+
+function spawnMaterial(name){
+  if(!name) return;
+  sandbox.inventory[name]=(sandbox.inventory[name]||0)+1;
+  log("Spawned: "+name+" (now "+sandbox.inventory[name]+")");
+}
+
+function spawnSelected(){
+  spawnMaterial(currentSelected);
+}
+
+function log(msg){
+  const box=document.getElementById("log");
+  const line=document.createElement("div");
+  line.textContent=msg;
+  box.appendChild(line);
+  box.scrollTop=box.scrollHeight;
+}
+
+// recipe helpers
+function canCraft(inputs,conditions,recipe){
+  for(const k in recipe.inputs){
+    if(!inputs[k] || inputs[k]<recipe.inputs[k]) return false;
+  }
+  for(const c in recipe.conditions){
+    if(conditions[c]===undefined) return false;
+    if(conditions[c]<recipe.conditions[c]) return false;
+  }
+  return true;
+}
+
+function findOutputs(inputs,conditions){
+  return RECIPES.filter(r=>canCraft(inputs,conditions,r));
+}
+
+function testCraft(){
+  const inputs={...sandbox.inventory};
+  const conditions={ "temperature-min":sandbox.temperature };
+  const possible=findOutputs(inputs,conditions);
+  if(!possible.length){
+    log("No craftable recipes with current inventory/temperature.");
+    return;
+  }
+  log("Craftable recipes:");
+  possible.slice(0,10).forEach(r=>{
+    log("  -> "+JSON.stringify(r.outputs));
+  });
+}
+
+init();
+</script>
+</body>
+</html>
