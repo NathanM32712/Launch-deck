@@ -1,53 +1,227 @@
-<!DOCTYPE html> <html> <head> <title>Launch Deck</title> <link rel="icon" type="image/png" href="../icon.png" /> <style> body { background-color: #0f070a; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; text-align: center; } .corner-icon { position: fixed; top: 12px; left: 12px; z-index: 100; } .corner-icon img { height: 60px; background: black; border-radius: 4px; } .title-bar h1 { margin: 0; font-size: 78px; } .tabs { display: flex; justify-content: center; gap: 20px; margin: 20px 0; } .tab { padding: 10px 20px; background: #222; border-radius: 100px; cursor: pointer; transition: 0.2s; } .tab:hover { background: #444; } .tab.active { background: #666; } .button-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; max-width: 800px; margin: 0 auto; } .game-button { padding: 15px; font-size: 16px; background-color: #333; color: white; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; } .game-button:hover { background-color: #555; } .section { display: none; } .section.active { display: grid; } </style> </head> <body>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Launch Deck</title>
+  <link rel="icon" type="image/png" href="icon.png" />
+  <style>
+    body {
+      background-color: #0f070a;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    .corner-icon {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 100;
+    }
+    .corner-icon img {
+      height: 60px;
+      background: black;
+      border-radius: 4px;
+    }
+    .title-bar h1 {
+      margin: 0;
+      font-size: 78px;
+    }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 20px 0;
+    }
+    .tab {
+      padding: 10px 20px;
+      background: #222;
+      border-radius: 100px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .tab:hover {
+      background: #444;
+    }
+    .tab.active {
+      background: #666;
+    }
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .game-button {
+      padding: 15px;
+      font-size: 16px;
+      background-color: #333;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .game-button:hover {
+      background-color: #555;
+    }
+    .section {
+      display: none;
+    }
+    .section.active {
+      display: grid;
+    }
+  </style>
+</head>
+<body>
 
-<a href="../Launch-Deck" class="corner-icon"> <img src="../icon.png" alt=""> </a>
+  <a href="../Launch-Deck" class="corner-icon">
+    <img src="../icon.png" alt="">
+  </a>
 
-<div class="title-bar"> <h1>Launch Deck</h1> </div>
+  <div class="title-bar">
+    <h1>Launch Deck</h1>
+  </div>
 
-<div class="tabs"> <div class="tab active" data-tab="info">Info</div> <div class="tab" data-tab="tools">Tools</div> <div class="tab" data-tab="games">Games</div> <div class="tab" data-tab="casino">Casino</div> </div>
+  <div class="tabs">
+    <div class="tab active" data-tab="info">Info</div>
+    <div class="tab" data-tab="tools">Tools</div>
+    <div class="tab" data-tab="games">Games</div>
+    <div class="tab" data-tab="casino">Casino</div>
+  </div>
+  
+  <div id="info" class="section active button-grid">
+    <button class="game-button" onclick="location.href='random quote.html'">random Quote</button>
+    <button class="game-button" onclick="location.href='updatelogs.html'">Update Logs</button>
+    <button class="game-button" onclick="location.href='admin.html'">admin panel</button>
+  </div>
 
-<div id="info" class="section active button-grid"> <button class="game-button" onclick="location.href='random quote.html'">random Quote</button> <button class="game-button" onclick="location.href='updatelogs.html'">Update Logs</button> <button class="game-button" onclick="location.href='admin.html'">admin panel</button> </div>
+  <div id="tools" class="section button-grid">
+    <button class="game-button" onclick="location.href='othergames/tab bomb.html.html'">Tab bomb</button>
+    <button class="game-button" onclick="location.href='othergames/calc (calc is short for calculator just using slang ).html'">Calc</button>
+    <button class="game-button" onclick="location.href='clock/clock.html'">Clock</button>
+    <button class="game-button" onclick="location.href='othergames/Web OS.html'">OS</button>
+    <button class="game-button" onclick="location.href='dictionary/dictionary.html'">dictionary</button>
+  </div>
 
-<div id="tools" class="section button-grid"> <button class="game-button" onclick="location.href='othergames/tab bomb.html.html'">Tab bomb</button> <button class="game-button" onclick="location.href='othergames/calc (calc is short for calculator just using slang ).html'">Calc</button> <button class="game-button" onclick="location.href='clock/clock.html'">Clock</button> <button class="game-button" onclick="location.href='othergames/Web OS.html'">OS</button> <button class="game-button" onclick="location.href='dictionary/dictionary.html'">dictionary</button> </div>
+  <div id="games" class="section button-grid">
+    <button class="game-button" onclick="location.href='othergames/idk.html'">Click Me</button>
+    <button class="game-button" onclick="location.href='Tower Defense/Tower Defense.html'">Tower Defence</button>
+    <button class="game-button" onclick="location.href='othergames/laser-run.html'">Laser Run</button>
+    <button class="game-button" onclick="location.href='othergames/sandbox.html'">Sandbox</button>
+    <button class="game-button" onclick="location.href='othergames/passwordgame.html'">Password Game</button>
+    <button class="game-button" onclick="location.href='mats/sand:box.html'">sand:box</button>
+    <button class="game-button" onclick="location.href='othergames/getting over it.html'">getting over it</button>
+  </div>
 
-<div id="games" class="section button-grid"> <button class="game-button" onclick="location.href='othergames/idk.html'">Click Me</button> <button class="game-button" onclick="location.href='Tower Defense/Tower Defense.html'">Tower Defence</button> <button class="game-button" onclick="location.href='othergames/laser-run.html'">Laser Run</button> <button class="game-button" onclick="location.href='othergames/sandbox.html'">Sandbox</button> <button class="game-button" onclick="location.href='othergames/passwordgame.html'">Password Game</button> <button class="game-button" onclick="location.href='mats/sand:box.html'">sand:box</button> <button class="game-button" onclick="location.href='othergames/getting over it.html'">getting over it</button> </div>
+  <div id="casino" class="section button-grid">
+    <button class="game-button" onclick="location.href='Nathan-s-Casino/limbo.html'">limbo</button>
+    <button class="game-button" onclick="location.href='Nathan-s-Casino/invest.html'">stonks</button>
+    <button class="game-button" onclick="location.href='Nathan-s-Casino/plinko.html'">plinko</button>
+    <button class="game-button" onclick="location.href='Nathan-s-Casino/Blackjack.html'">blackjack</button>
+    <button class="game-button" onclick="location.href='Nathan-s-Casino/slots.html'">slots</button>
+  </div>
 
-<div id="casino" class="section button-grid"> <button class="game-button" onclick="location.href='Nathan-s-Casino/limbo.html'">limbo</button> <button class="game-button" onclick="location.href='Nathan-s-Casino/invest.html'">stonks</button> <button class="game-button" onclick="location.href='Nathan-s-Casino/plinko.html'">plinko</button> <button class="game-button" onclick="location.href='Nathan-s-Casino/Blackjack.html'">blackjack</button> <button class="game-button" onclick="location.href='Nathan-s-Casino/slots.html'">slots</button> </div>
+<script>
+/* ---------------- TAB FIX ---------------- */
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    const target = tab.dataset.tab;
 
-<script> /* ---------------- TAB FIX ---------------- */ document.querySelectorAll(".tab").forEach(tab => { tab.addEventListener("click", () => { const target = tab.dataset.tab;
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
 
-document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(target).classList.add("active");
+  });
+});
 
-tab.classList.add("active");
-document.getElementById(target).classList.add("active");
+/* ---------------- COOKIE HELPERS ---------------- */
+function setCookie(name, value, days) {
+  const d = new Date();
+  d.setTime(d.getTime() + (days*24*60*60*1000));
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${d.toUTCString()};path=/`;
+}
 
-}); });
+function getCookie(name) {
+  const cname = name + "=";
+  const arr = decodeURIComponent(document.cookie).split(";");
+  for (let c of arr) {
+    c = c.trim();
+    if (c.indexOf(cname) === 0) return c.substring(cname.length);
+  }
+  return null;
+}
 
-/* ---------------- COOKIE HELPERS ---------------- / function setCookie(name, value, days) { const d = new Date(); d.setTime(d.getTime() + (days246060*1000)); document.cookie = ${name}=${encodeURIComponent(value)};expires=${d.toUTCString()};path=/; }
+function checkZeroReset() {
+  let balance = parseInt(getCookie("balance") || "0");
+  const zeroDate = getCookie("zeroDate");
+  const today = new Date().toDateString();
 
-function getCookie(name) { const cname = name + "="; const arr = decodeURIComponent(document.cookie).split(";"); for (let c of arr) { c = c.trim(); if (c.indexOf(cname) === 0) return c.substring(cname.length); } return null; }
+  if (balance <= 0 && !zeroDate) {
+    setCookie("zeroDate", today, 365);
+    return;
+  }
 
-function checkZeroReset() { let balance = parseInt(getCookie("balance") || "0"); const zeroDate = getCookie("zeroDate"); const today = new Date().toDateString();
+  if (balance <= 0 && zeroDate && zeroDate !== today) {
+    balance = 100;
+    setCookie("balance", balance, 365);
+    setCookie("zeroDate", today, 365);
+    alert("You hit $0 yesterday — here’s your daily $100!");
+    return;
+  }
 
-if (balance <= 0 && !zeroDate) { setCookie("zeroDate", today, 365); return; }
-
-if (balance <= 0 && zeroDate && zeroDate !== today) { balance = 100; setCookie("balance", balance, 365); setCookie("zeroDate", today, 365); alert("You hit $0 yesterday — here’s your daily $100!"); return; }
-
-if (balance > 0 && zeroDate) { setCookie("zeroDate", "", -1); } }
+  if (balance > 0 && zeroDate) {
+    setCookie("zeroDate", "", -1);
+  }
+}
 
 checkZeroReset();
 
-let sequence = ""; const target = "admin";
+let sequence = "";
+const target = "admin";
 
-const secretBox = document.createElement("div"); secretBox.style.position = "fixed"; secretBox.style.top = "50%"; secretBox.style.left = "50%"; secretBox.style.transform = "translate(-50%, -50%)"; secretBox.style.background = "#06273f"; secretBox.style.padding = "20px"; secretBox.style.borderRadius = "10px"; secretBox.style.boxShadow = "0 0 20px rgba(0,0,0,0.6)"; secretBox.style.display = "none"; secretBox.style.zIndex = "9999";
+const secretBox = document.createElement("div");
+secretBox.style.position = "fixed";
+secretBox.style.top = "50%";
+secretBox.style.left = "50%";
+secretBox.style.transform = "translate(-50%, -50%)";
+secretBox.style.background = "#06273f";
+secretBox.style.padding = "20px";
+secretBox.style.borderRadius = "10px";
+secretBox.style.boxShadow = "0 0 20px rgba(0,0,0,0.6)";
+secretBox.style.display = "none";
+secretBox.style.zIndex = "9999";
 
-secretBox.innerHTML =   <p style='color:#9bd6ff; font-family:Segoe UI;'>Enter admin phrase:</p>   <input id='adminPhrase' type='text' style='width:100%; padding:10px; border-radius:6px; border:none; background:#08314a; color:#cfefff;'>   <button id='adminSubmit' style='margin-top:10px; width:100%; padding:10px; border-radius:6px; border:none; background:#48b0ff; font-weight:bold; cursor:pointer;'>Unlock Admin</button>;
+secretBox.innerHTML = `
+  <p style='color:#9bd6ff; font-family:Segoe UI;'>Enter admin phrase:</p>
+  <input id='adminPhrase' type='text' style='width:100%; padding:10px; border-radius:6px; border:none; background:#08314a; color:#cfefff;'>
+  <button id='adminSubmit' style='margin-top:10px; width:100%; padding:10px; border-radius:6px; border:none; background:#48b0ff; font-weight:bold; cursor:pointer;'>Unlock Admin</button>
+`;
 
 document.body.appendChild(secretBox);
 
-document.addEventListener("keydown", (e) => { sequence += e.key.toLowerCase(); if (sequence.length > 5) sequence = sequence.slice(-5); if (sequence === target) { secretBox.style.display = "block"; document.getElementById("adminPhrase").focus(); } });
+document.addEventListener("keydown", (e) => {
+  sequence += e.key.toLowerCase();
+  if (sequence.length > 5) sequence = sequence.slice(-5);
+  if (sequence === target) {
+    secretBox.style.display = "block";
+    document.getElementById("adminPhrase").focus();
+  }
+});
 
-document.getElementById("adminSubmit").addEventListener("click", () => { const phrase = document.getElementById("adminPhrase").value.trim(); if (phrase === "this website is the G.O.A.T.") { setCookie("admin", "true", 365); alert("Admin unlocked!"); secretBox.style.display = "none"; } else { alert("Incorrect phrase."); } }); </script>
+document.getElementById("adminSubmit").addEventListener("click", () => {
+  const phrase = document.getElementById("adminPhrase").value.trim();
+  if (phrase === "this website is the G.O.A.T.") {
+    document.cookie = "admin=true; path=/;";
+    alert("Admin unlocked!");
+    secretBox.style.display = "none";
+  } else {
+    alert("Incorrect phrase.");
+  }
+});
+</script>
 
-</body> </html>
+</body>
+</html>
