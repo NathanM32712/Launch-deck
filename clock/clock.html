@@ -1,442 +1,300 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="utf-8" />
-  <title>--:--:-- / --:--:--</title>
-  <link rel="icon" type="image/png" href="../icon.png" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    :root{
-      --bg:#071018;
-      --accent:#00aaff;
-      --muted:#7fbfdc;
-      --text:#eee;
-      --panel:#0b1b26;
-    }
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
-    .wrap{display:flex;gap:24px;padding:24px;box-sizing:border-box;height:100%;}
-    .left{flex:1;min-width:320px;max-width:900px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:18px;border-radius:10px;}
-    .right{width:320px;display:flex;flex-direction:column;align-items:center;gap:12px;}
-    h1{margin:0 0 8px 0;font-size:20px}
-    h2{margin:14px 0 6px 0;color:var(--accent);font-size:14px}
-    .clock{font-size:28px;font-weight:700;margin-bottom:6px}
-    .small{font-size:13px;color:var(--muted)}
-    textarea{width:100%;height:120px;background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--text);padding:8px;border-radius:6px;resize:vertical;font-family:monospace}
-    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-    button{background:var(--panel);border:1px solid rgba(255,255,255,0.04);color:var(--text);padding:8px 12px;border-radius:8px;cursor:pointer}
-    input[type="text"]{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text)}
-    footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
-    .panel{background:rgba(255,255,255,0.02);padding:12px;border-radius:8px}
-    canvas{background:transparent;border-radius:50%}
-    .row{display:flex;gap:12px;align-items:center}
-    .grow{flex:1}
-    .label{font-size:12px;color:var(--muted);margin-bottom:6px}
-  </style>
+<meta charset="UTF-8">
+<title>Mini Clock Player</title>
+<style>
+  body {
+    margin: 0;
+    background: #111;
+    color: #e0e8ff;
+    font-family: system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 260px;
+    height: 260px;
+    overflow: hidden;
+  }
+
+  #tabs {
+    display: flex;
+    border-bottom: 1px solid #222;
+  }
+
+  #tabs button {
+    flex: 1;
+    padding: 4px 0;
+    background: #151515;
+    border: none;
+    color: #9ba4d1;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+  }
+
+  #tabs button.active {
+    background: #1f2535;
+    color: #e0e8ff;
+  }
+
+  .tabPage {
+    flex: 1;
+    display: none;
+    padding: 6px;
+    box-sizing: border-box;
+  }
+
+  #digitalTab {
+    text-align: center;
+  }
+
+  .label {
+    font-size: 10px;
+    color: #7f8bb5;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 4px;
+  }
+
+  .value {
+    font-size: 18px;
+    color: #dfe6ff;
+  }
+
+  #analogTab {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #scheduleTab textarea {
+    width: 100%;
+    height: 150px;
+    background: #181a20;
+    border: 1px solid #333;
+    color: #dfe6ff;
+    font-family: monospace;
+    font-size: 11px;
+    box-sizing: border-box;
+    resize: none;
+  }
+
+  #scheduleTab button {
+    margin-top: 4px;
+    width: 100%;
+    padding: 4px 0;
+    background: #2c3b6b;
+    border: none;
+    color: #e0e8ff;
+    font-size: 11px;
+    cursor: pointer;
+  }
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="left">
-      <a href="../launch-deck.html" style="position: fixed; top: 12px; left: 12px; z-index: 100;">
-        <img src="../icon.png" alt="" style="height: 60px; background: black; border-radius: 4px;">
-      </a>
 
-      <h1>Clock</h1>
+<div id="tabs">
+  <button id="tabBtnDigital" class="active" onclick="showTab('digitalTab')">Digital</button>
+  <button id="tabBtnAnalog" onclick="showTab('analogTab')">Analog</button>
+  <button id="tabBtnSchedule" onclick="showTab('scheduleTab')">Schedule</button>
+</div>
 
-      <h2>Current</h2>
-      <div class="clock" id="current">--:--:--</div>
+<div id="digitalTab" class="tabPage" style="display:block;">
+  <div class="label">Current</div>
+  <div class="value" id="currentTime">--:--:--</div>
 
-      <h2>Current Time Left</h2>
-      <div class="clock" id="left">--:--:--</div>
+  <div class="label">Left</div>
+  <div class="value" id="timeLeft">--:--:--</div>
 
-      <h2>End</h2>
-      <div class="clock" id="end">--:--:--</div>
+  <div class="label">End</div>
+  <div class="value" id="endTime">--:--:--</div>
+</div>
 
-      <h2>Schedule</h2>
-      <div class="panel">
-        <div class="small">Enter schedule lines (<code>start/end</code> like <code>08:00/08:58</code>), one per line.</div>
-        <textarea id="scheduleBox"></textarea>
-        <div class="controls">
-          <button id="applyScheduleBtn">Apply Schedule</button>
-          <button id="resetScheduleBtn">Reset Schedule</button>
-          <div class="small" style="align-self:center;margin-left:auto">Saved in cookie</div>
-        </div>
-      </div>
+<div id="analogTab" class="tabPage">
+  <canvas id="analog" width="120" height="120"></canvas>
+</div>
 
-      <h2>Stopwatch</h2>
-      <div class="panel">
-        <div class="clock" id="stopwatchDisplay">00:00:00</div>
-        <div class="row">
-          <button id="swStart">Start</button>
-          <button id="swPause">Pause</button>
-          <button id="swReset">Reset</button>
-          <div class="small" style="margin-left:auto">Persists in cookie</div>
-        </div>
-      </div>
-
-      <h2>Countdown Timer</h2>
-      <div class="panel">
-        <div class="label">Enter duration (HH:MM:SS or MM:SS)</div>
-        <div class="row">
-          <input id="timerInput" type="text" placeholder="05:00" />
-          <button id="timerSet">Set</button>
-        </div>
-        <div style="margin-top:10px">
-          <div class="clock" id="timerDisplay">--:--:--</div>
-          <div class="row">
-            <button id="tStart">Start</button>
-            <button id="tPause">Pause</button>
-            <button id="tReset">Reset</button>
-            <div class="small" style="margin-left:auto">Persists in cookie</div>
-          </div>
-        </div>
-      </div>
-
-      <footer>
-        <div>Made by Nathan Marty</div>
-      </footer>
-    </div>
-
-    <div class="right">
-      <h2>Analog Clock</h2>
-      <canvas id="analog" width="280" height="280" aria-label="Analog clock"></canvas>
-      <div class="small">analog clock</div>
-    </div>
-  </div>
+<div id="scheduleTab" class="tabPage">
+  <div class="label">Schedule (one block per line, e.g. 08:00/08:58)</div>
+  <textarea id="scheduleInput"></textarea>
+  <button onclick="saveSchedule()">Save Schedule</button>
+</div>
 
 <script>
-/* Cookie helpers */
-function setCookie(name, value, days = 365) {
-  const d = new Date();
-  d.setTime(d.getTime() + (days*24*60*60*1000));
-  document.cookie = name + "=" + encodeURIComponent(value) + ";expires=" + d.toUTCString() + ";path=/";
+// ---------- Tabs ----------
+function showTab(id) {
+  document.querySelectorAll('.tabPage').forEach(p => p.style.display = 'none');
+  document.getElementById(id).style.display = 'block';
+
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.remove('active'));
+  if (id === 'digitalTab') document.getElementById('tabBtnDigital').classList.add('active');
+  if (id === 'analogTab') document.getElementById('tabBtnAnalog').classList.add('active');
+  if (id === 'scheduleTab') document.getElementById('tabBtnSchedule').classList.add('active');
 }
+
+// ---------- Schedule helpers ----------
 function getCookie(name) {
-  const cname = name + "=";
-  const decoded = decodeURIComponent(document.cookie || "");
-  const parts = decoded.split(";");
-  for (let p of parts) {
-    p = p.trim();
-    if (p.indexOf(cname) === 0) return p.substring(cname.length);
-  }
-  return "";
+  const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : "";
 }
 
-/* Schedule parsing & UI */
-const defaultSchedule = `08:00/08:58
-09:02/09:44
-09:48/10:30
-10:34/11:16
-11:20/12:23
-12:27/13:25
-13:29/14:27
-14:31/15:30`;
-
-let periods = []; // [startSec,endSec]
-
-function toSeconds(t) {
-  const parts = t.split(":").map(s => s.trim());
-  if (parts.length === 1) return Number(parts[0]) * 3600;
-  const h = Number(parts[0]) || 0;
-  const m = Number(parts[1]) || 0;
-  const s = parts[2] ? Number(parts[2]) : 0;
-  return h*3600 + m*60 + s;
-}
-function pad(n, len=2){ return String(n).padStart(len,"0"); }
-function formatClock(h,m,s){
-  let hrs = h;
-  const ampm = hrs >= 12 ? "PM" : "AM";
-  hrs = hrs % 12; if (hrs === 0) hrs = 12;
-  return `${hrs}:${pad(m)}:${pad(s)} ${ampm}`;
-}
-function formatDuration(sec){
-  if (sec === null || sec === undefined) return "--:--:--";
-  if (sec < 0) return "--:--:--";
-  const h = Math.floor(sec/3600);
-  const m = Math.floor((sec%3600)/60);
-  const s = sec % 60;
-  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+function setCookie(name, value) {
+  document.cookie = name + "=" + encodeURIComponent(value) + "; path=/; max-age=31536000";
 }
 
-function applyScheduleFromText(text) {
-  const lines = (text||"").split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-  periods = [];
-  let lastEnd = null;
-  for (const line of lines) {
-    const parts = line.split("/");
-    if (parts.length !== 2) continue;
-    const start = toSeconds(parts[0]);
-    const end = toSeconds(parts[1]);
-    if (!isFinite(start) || !isFinite(end)) continue;
-    if (lastEnd !== null && start > lastEnd) {
-      periods.push([lastEnd, start]); // break
-    }
-    periods.push([start, end]);
-    lastEnd = end;
-  }
+function parseVisibleSchedule(str) {
+  if (!str.trim()) return [];
+  return str.trim().split(/\s+/).map(line => {
+    const [start, end] = line.split('/');
+    return { start, end };
+  });
 }
 
-/* Stopwatch */
-let swInterval = null;
-let swSeconds = Number(getCookie("stopwatch_seconds") || 0);
-let swRunning = (getCookie("stopwatch_running") === "1");
-
-function updateStopwatchDisplay(){
-  document.getElementById("stopwatchDisplay").textContent = formatDuration(swSeconds);
-}
-function swStart(){
-  if (swInterval) return;
-  swRunning = true;
-  setCookie("stopwatch_running", "1", 365);
-  swInterval = setInterval(() => {
-    swSeconds++;
-    setCookie("stopwatch_seconds", String(swSeconds), 365);
-    updateStopwatchDisplay();
-  }, 1000);
-}
-function swPause(){
-  if (swInterval) clearInterval(swInterval);
-  swInterval = null;
-  swRunning = false;
-  setCookie("stopwatch_running", "0", 365);
-}
-function swReset(){
-  swPause();
-  swSeconds = 0;
-  setCookie("stopwatch_seconds", "0", 365);
-  updateStopwatchDisplay();
-}
-document.getElementById("swStart").addEventListener("click", swStart);
-document.getElementById("swPause").addEventListener("click", swPause);
-document.getElementById("swReset").addEventListener("click", swReset);
-
-/* Countdown Timer */
-let timerInterval = null;
-let timerRemaining = null;
-let timerRunning = false;
-
-function parseDurationInput(str){
-  str = (str||"").trim();
-  if (!str) return 0;
-  const parts = str.split(":").map(Number).reverse();
-  let s = 0;
-  if (parts.length >= 1) s += (parts[0] || 0);
-  if (parts.length >= 2) s += (parts[1] || 0) * 60;
-  if (parts.length >= 3) s += (parts[2] || 0) * 3600;
-  return s;
-}
-function setTimerFromInput(){
-  const val = document.getElementById("timerInput").value.trim();
-  const secs = parseDurationInput(val);
-  timerRemaining = secs;
-  timerRunning = false;
-  clearInterval(timerInterval); timerInterval = null;
-  saveTimerCookie();
-  updateTimerDisplay();
-}
-function updateTimerDisplay(){
-  document.getElementById("timerDisplay").textContent = timerRemaining === null ? "--:--:--" : formatDuration(timerRemaining);
-}
-function saveTimerCookie(){
-  const obj = { remaining: timerRemaining, running: timerRunning ? 1 : 0, updatedAt: Date.now() };
-  setCookie("timer_state", JSON.stringify(obj), 365);
-}
-function loadTimerCookie(){
-  const raw = getCookie("timer_state");
-  if (!raw) return;
-  try {
-    const obj = JSON.parse(raw);
-    timerRemaining = typeof obj.remaining === "number" ? obj.remaining : null;
-    timerRunning = obj.running === 1;
-  } catch(e){}
-}
-function tStart(){
-  if (timerRemaining === null || timerRemaining <= 0) return;
-  if (timerInterval) return;
-  timerRunning = true;
-  saveTimerCookie();
-  timerInterval = setInterval(() => {
-    if (timerRemaining > 0) {
-      timerRemaining--;
-      saveTimerCookie();
-      updateTimerDisplay();
-      if (timerRemaining <= 0) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-        timerRunning = false;
-        saveTimerCookie();
-        const old = document.title;
-        document.title = "TIMER DONE!";
-        setTimeout(()=>document.title = old, 2000);
-      }
-    }
-  }, 1000);
-}
-function tPause(){
-  if (timerInterval) clearInterval(timerInterval);
-  timerInterval = null;
-  timerRunning = false;
-  saveTimerCookie();
-}
-function tReset(){
-  tPause();
-  timerRemaining = null;
-  saveTimerCookie();
-  updateTimerDisplay();
-}
-document.getElementById("timerSet").addEventListener("click", setTimerFromInput);
-document.getElementById("tStart").addEventListener("click", tStart);
-document.getElementById("tPause").addEventListener("click", tPause);
-document.getElementById("tReset").addEventListener("click", tReset);
-
-/* Analog + Digital clock update */
-function updateMainClock(){
+function toDate(t) {
+  const [h, m] = t.split(':').map(Number);
   const now = new Date();
-  const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
-  document.getElementById("current").textContent = formatClock(h,m,s);
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
+}
 
-  const currentSec = h*3600 + m*60 + s;
-  let left = "--:--:--", end = "--:--:--";
-  if (periods.length > 0) {
-    for (let i=0;i<periods.length;i++){
-      const [start,endSec] = periods[i];
-      if (currentSec >= start && currentSec <= endSec) {
-        left = formatDuration(endSec - currentSec);
-        const endH = Math.floor(endSec/3600);
-        const endM = Math.floor((endSec%3600)/60);
-        const endS = endSec%60;
-        end = formatClock(endH,endM,endS);
-        break;
+function expandSchedule(blocks) {
+  const full = [];
+  for (let i = 0; i < blocks.length; i++) {
+    const a = blocks[i];
+    full.push(a);
+    if (i < blocks.length - 1) {
+      const b = blocks[i + 1];
+      if (a.end !== b.start) {
+        full.push({ start: a.end, end: b.start });
       }
     }
   }
-  document.getElementById("left").textContent = left;
-  document.getElementById("end").textContent = end;
-
-  // update tab title with left and current (left first so it's visible)
-  document.title = `${left} / ${formatClock(h,m,s)}`;
-
-  drawAnalog(now);
+  return full;
 }
 
-/* Analog drawing: hands point like a real clock (12 at top) */
-const canvas = document.getElementById("analog");
-const ctx = canvas.getContext("2d");
-const R = canvas.width / 2;
+function formatHMS(ms) {
+  if (ms <= 0) return "00:00:00";
+  const s = Math.floor(ms / 1000);
+  const h = String(Math.floor(s / 3600)).padStart(2, '0');
+  const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+  const sec = String(s % 60).padStart(2, '0');
+  return `${h}:${m}:${sec}`;
+}
 
-function drawAnalog(now) {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+function formatTime12(d) {
+  return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+}
+
+// Load schedule from cookie
+let scheduleStr = getCookie('schedule') || "08:00/08:58\n09:02/09:44";
+document.getElementById('scheduleInput').value = scheduleStr;
+let visibleBlocks = parseVisibleSchedule(scheduleStr);
+let blocks = expandSchedule(visibleBlocks);
+
+function saveSchedule() {
+  scheduleStr = document.getElementById('scheduleInput').value.trim();
+  setCookie('schedule', scheduleStr);
+  visibleBlocks = parseVisibleSchedule(scheduleStr);
+  blocks = expandSchedule(visibleBlocks);
+  alert("Schedule saved.");
+}
+
+// ---------- Digital clock ----------
+function updateDigital() {
+  const now = new Date();
+  document.getElementById("currentTime").textContent = formatTime12(now);
+
+  if (!blocks.length) {
+    document.getElementById("timeLeft").textContent = "--:--:--";
+    document.getElementById("endTime").textContent = "--:--:--";
+    return;
+  }
+
+  let current = null;
+  for (const b of blocks) {
+    const s = toDate(b.start);
+    const e = toDate(b.end);
+    if (now >= s && now <= e) {
+      current = { s, e };
+      break;
+    }
+  }
+
+  if (!current) {
+    document.getElementById("timeLeft").textContent = "--:--:--";
+    document.getElementById("endTime").textContent = "--:--:--";
+    return;
+  }
+
+  const msLeft = current.e - now;
+  document.getElementById("timeLeft").textContent = formatHMS(msLeft);
+  document.getElementById("endTime").textContent = formatTime12(current.e);
+}
+
+// ---------- Analog clock ----------
+const c = document.getElementById("analog");
+const ctx = c.getContext("2d");
+const r = c.width / 2;
+
+function drawAnalog() {
+  ctx.clearRect(0, 0, c.width, c.height);
   ctx.save();
-  ctx.translate(R,R);
+  ctx.translate(r, r);
 
-  // face
   ctx.beginPath();
-  ctx.arc(0,0,R-6,0,Math.PI*2);
-  ctx.fillStyle = "#071018";
-  ctx.fill();
+  ctx.arc(0, 0, r - 4, 0, Math.PI * 2);
+  ctx.strokeStyle = "#3a6cff";
   ctx.lineWidth = 4;
-  ctx.strokeStyle = "#0eaaff";
   ctx.stroke();
 
-  // ticks
-  for (let i=0;i<60;i++){
-    const ang = (i * Math.PI/30) - Math.PI/2; // rotate so 12 is top
-    const inner = (i%5===0) ? R-22 : R-16;
-    const outer = R-6;
-    ctx.beginPath();
-    ctx.moveTo(inner*Math.cos(ang), inner*Math.sin(ang));
-    ctx.lineTo(outer*Math.cos(ang), outer*Math.sin(ang));
-    ctx.strokeStyle = (i%5===0) ? "#0eaaff" : "rgba(14,170,255,0.35)";
-    ctx.lineWidth = (i%5===0) ? 3 : 1;
-    ctx.stroke();
-  }
+  const now = new Date();
+  const sec = now.getSeconds();
+  const min = now.getMinutes();
+  const hr  = now.getHours() % 12;
 
-  // numbers
-  ctx.fillStyle = "#0eaaff";
-  ctx.font = "16px system-ui, Arial";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  for (let n=1;n<=12;n++){
-    const ang = (n * Math.PI/6) - Math.PI/2;
-    const x = Math.cos(ang) * (R - 44);
-    const y = Math.sin(ang) * (R - 44);
-    ctx.fillText(String(n), x, y);
-  }
-
-  // hands angles (12 at top)
-  const hour = now.getHours() % 12;
-  const minute = now.getMinutes();
-  const second = now.getSeconds();
-
-  const hourAngle = ((hour + minute/60 + second/3600) * Math.PI/6) - Math.PI/2;
-  const minuteAngle = ((minute + second/60) * Math.PI/30) - Math.PI/2;
-  const secondAngle = (second * Math.PI/30) - Math.PI/2;
-
-  // hour hand
-  drawHand(ctx, hourAngle, R*0.45, 7, "#dbefff");
-  // minute hand
-  drawHand(ctx, minuteAngle, R*0.62, 5, "#bfeaff");
-  // second hand
-  drawHand(ctx, secondAngle, R*0.78, 2, "#00d0ff");
-
-  // center dot
+  ctx.save();
+  ctx.rotate((Math.PI/6)*hr + (Math.PI/360)*min);
+  ctx.strokeStyle = "#dfe6ff";
+  ctx.lineWidth = 5;
   ctx.beginPath();
-  ctx.arc(0,0,6,0,Math.PI*2);
-  ctx.fillStyle = "#00aaff";
-  ctx.fill();
+  ctx.moveTo(0, 10);
+  ctx.lineTo(0, -30);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.rotate((Math.PI/30)*min + (Math.PI/1800)*sec);
+  ctx.strokeStyle = "#9bb4ff";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(0, 12);
+  ctx.lineTo(0, -45);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.rotate((Math.PI/30)*sec);
+  ctx.strokeStyle = "#3a6cff";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, 15);
+  ctx.lineTo(0, -50);
+  ctx.stroke();
+  ctx.restore();
 
   ctx.restore();
 }
-function drawHand(ctx, angle, length, width, color="#fff"){
-  ctx.beginPath();
-  ctx.lineWidth = width;
-  ctx.lineCap = "round";
-  ctx.strokeStyle = color;
-  ctx.moveTo(0,0);
-  ctx.lineTo(Math.cos(angle)*length, Math.sin(angle)*length);
-  ctx.stroke();
-}
 
-/* Initialization */
-function init(){
-  // schedule
-  const savedSchedule = getCookie("schedule");
-  document.getElementById("scheduleBox").value = savedSchedule || defaultSchedule;
-  applyScheduleFromText(savedSchedule || defaultSchedule);
+// ---------- Loop ----------
+setInterval(() => {
+  updateDigital();
+  drawAnalog();
+}, 1000);
 
-  // stopwatch
-  updateStopwatchDisplay();
-  if (swRunning) swStart();
-
-  // timer
-  loadTimerCookie();
-  updateTimerDisplay();
-  if (timerRunning) tStart();
-
-  // wire schedule buttons
-  document.getElementById("applyScheduleBtn").addEventListener("click", () => {
-    const txt = document.getElementById("scheduleBox").value.trim();
-    setCookie("schedule", txt, 365);
-    applyScheduleFromText(txt);
-  });
-  document.getElementById("resetScheduleBtn").addEventListener("click", () => {
-    document.getElementById("scheduleBox").value = defaultSchedule;
-    setCookie("schedule", defaultSchedule, 365);
-    applyScheduleFromText(defaultSchedule);
-  });
-
-  // main tick
-  updateMainClock();
-  setInterval(updateMainClock, 1000);
-}
-window.addEventListener("load", init);
-
-/* Save on unload */
-window.addEventListener("beforeunload", () => {
-  setCookie("stopwatch_seconds", String(swSeconds), 365);
-  setCookie("stopwatch_running", swRunning ? "1" : "0", 365);
-  saveTimerCookie();
-});
+updateDigital();
+drawAnalog();
 </script>
+
 </body>
 </html>
-
