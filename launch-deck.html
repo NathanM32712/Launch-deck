@@ -137,90 +137,14 @@ document.querySelectorAll(".tab").forEach(tab => {
   });
 });
 
-/* ---------------- COOKIE HELPERS ---------------- */
-function setCookie(name, value, days) {
-  const d = new Date();
-  d.setTime(d.getTime() + (days*24*60*60*1000));
-  document.cookie = `${name}=${encodeURIComponent(value)};expires=${d.toUTCString()};path=/`;
-}
-
-function getCookie(name) {
-  const cname = name + "=";
-  const arr = decodeURIComponent(document.cookie).split(";");
-  for (let c of arr) {
-    c = c.trim();
-    if (c.indexOf(cname) === 0) return c.substring(cname.length);
-  }
-  return null;
-}
-
-function checkZeroReset() {
-  let balance = parseInt(getCookie("balance") || "0");
-  const zeroDate = getCookie("zeroDate");
-  const today = new Date().toDateString();
-
-  if (balance <= 0 && !zeroDate) {
-    setCookie("zeroDate", today, 365);
-    return;
-  }
-
-  if (balance <= 0 && zeroDate && zeroDate !== today) {
-    balance = 100;
-    setCookie("balance", balance, 365);
-    setCookie("zeroDate", today, 365);
-    alert("You hit $0 yesterday — here’s your daily $100!");
-    return;
-  }
-
-  if (balance > 0 && zeroDate) {
-    setCookie("zeroDate", "", -1);
-  }
-}
-
-checkZeroReset();
-
-let sequence = "";
-const target = "admin";
-
-const secretBox = document.createElement("div");
-secretBox.style.position = "fixed";
-secretBox.style.top = "50%";
-secretBox.style.left = "50%";
-secretBox.style.transform = "translate(-50%, -50%)";
-secretBox.style.background = "#06273f";
-secretBox.style.padding = "20px";
-secretBox.style.borderRadius = "10px";
-secretBox.style.boxShadow = "0 0 20px rgba(0,0,0,0.6)";
-secretBox.style.display = "none";
-secretBox.style.zIndex = "9999";
-
-secretBox.innerHTML = `
-  <p style='color:#9bd6ff; font-family:Segoe UI;'>Enter admin phrase:</p>
-  <input id='adminPhrase' type='text' style='width:100%; padding:10px; border-radius:6px; border:none; background:#08314a; color:#cfefff;'>
-  <button id='adminSubmit' style='margin-top:10px; width:100%; padding:10px; border-radius:6px; border:none; background:#48b0ff; font-weight:bold; cursor:pointer;'>Unlock Admin</button>
-`;
-
-document.body.appendChild(secretBox);
-
-document.addEventListener("keydown", (e) => {
-  sequence += e.key.toLowerCase();
-  if (sequence.length > 5) sequence = sequence.slice(-5);
-  if (sequence === target) {
-    secretBox.style.display = "block";
-    document.getElementById("adminPhrase").focus();
-  }
-});
-
-document.getElementById("adminSubmit").addEventListener("click", () => {
-  const phrase = document.getElementById("adminPhrase").value.trim();
-  if (phrase === "this website is the G.O.A.T.") {
-    document.cookie = "admin=true; path=/;";
-    alert("Admin unlocked!");
-    secretBox.style.display = "none";
-  } else {
-    alert("Incorrect phrase.");
-  }
-});
+/* ---------------- AUTO OPEN MINI CLOCK WINDOW ---------------- */
+window.onload = () => {
+  window.open(
+    "clock/clock.html",
+    "MiniClockPlayer",
+    "width=260,height=260,left=20,top=20"
+  );
+};
 </script>
 
 </body>
