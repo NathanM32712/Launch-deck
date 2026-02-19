@@ -1,12 +1,22 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta http-equiv="refresh" content="0; url=launch-deck.html" />
-    <title>Redirecting...</title>
-    <link rel="icon" type="image/png" href="icon.png" />
-  </head>
-  <body>
-    <p>If you're not redirected, <a href="launch-deck.html">click here</a>.</p>
-  </body>
-</html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Set Admin Cookie</title>
+</head>
+<body>
+<script>
+  // Set admin cookie to true, expires in 30 days
+  (function () {
+    const days = 30;
+    const date = new Date();
+    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+    const expires = "expires=" + date.toUTCString();
+    document.cookie = "admin=true;" + expires + ";path=/";
+    console.log("admin cookie set to true");
+  })();
+</script>
 
+<p>Admin cookie set to <strong>true</strong>. You can close this tab.</p>
+</body>
+</html>
