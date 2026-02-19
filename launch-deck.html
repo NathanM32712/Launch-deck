@@ -123,29 +123,6 @@
     <button class="game-button" onclick="location.href='Nathan-s-Casino/slots.html'">slots</button>
   </div>
 
-<script>
-/* ---------------- TAB FIX ---------------- */
-document.querySelectorAll(".tab").forEach(tab => {
-  tab.addEventListener("click", () => {
-    const target = tab.dataset.tab;
-
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
-
-    tab.classList.add("active");
-    document.getElementById(target).classList.add("active");
-  });
-});
-
-/* ---------------- AUTO OPEN MINI CLOCK WINDOW ---------------- */
-window.onload = () => {
-  window.open(
-    "clock/clock.html",
-    "MiniClockPlayer",
-    "width=260,height=260,left=20,top=20"
-  );
-};
-</script>
-
 </body>
 </html>
+
