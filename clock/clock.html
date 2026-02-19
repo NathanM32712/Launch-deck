@@ -1,508 +1,881 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Clock</title>
-  <title>--:--:-- / --:--:--</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    :root{
-      --bg:#071018;
-      --accent:#00aaff;
-      --muted:#7fbfdc;
-      --text:#eee;
-      --panel:#0b1b26;
-    }
-    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;}
-    .wrap{display:flex;gap:24px;padding:24px;box-sizing:border-box;height:100%;}
-    .left{flex:1;min-width:320px;max-width:900px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:18px;border-radius:10px;}
-    .right{width:320px;display:flex;flex-direction:column;align-items:center;gap:12px;}
-    h1{margin:0 0 8px 0;font-size:20px}
-    h2{margin:14px 0 6px 0;color:var(--accent);font-size:14px}
-    .clock{font-size:28px;font-weight:700;margin-bottom:6px}
-    .small{font-size:13px;color:var(--muted)}
-    textarea{width:100%;height:120px;background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--text);padding:8px;border-radius:6px;resize:vertical;font-family:monospace}
-    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-    button{background:var(--panel);border:1px solid rgba(255,255,255,0.04);color:var(--text);padding:8px 12px;border-radius:8px;cursor:pointer}
-    input[type="text"]{padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text)}
-    footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
-    .panel{background:rgba(255,255,255,0.02);padding:12px;border-radius:8px}
-    canvas{background:transparent;border-radius:50%}
-    .row{display:flex;gap:12px;align-items:center}
-    .grow{flex:1}
-    .label{font-size:12px;color:var(--muted);margin-bottom:6px}
-  </style>
+<meta charset="UTF-8">
+<title>LaunchCheck – Working Clock</title>
+<style>
+  :root {
+    --bg: #05060a;
+    --panel: #10121a;
+    --accent: #4fd1c5;
+    --accent-soft: #2c7a7b;
+    --text-main: #f7fafc;
+    --text-muted: #a0aec0;
+    --danger: #f56565;
+    --font-mono: "SF Mono", Menlo, Consolas, monospace;
+    --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at top, #1a202c 0, #05060a 55%);
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .app {
+    width: 960px;
+    max-width: 100%;
+    padding: 24px 28px;
+    background: linear-gradient(145deg, #05060a 0, #0b0d14 40%, #05060a 100%);
+    border-radius: 18px;
+    box-shadow:
+      0 24px 60px rgba(0,0,0,0.75),
+      0 0 0 1px rgba(255,255,255,0.03);
+  }
+  .app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 18px;
+  }
+  .title {
+    font-size: 22px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 2fr 2fr 1.6fr;
+    gap: 18px;
+  }
+  .card {
+    background: radial-gradient(circle at top left, #151826 0, #05060a 70%);
+    border-radius: 14px;
+    padding: 16px 18px 18px;
+    border: 1px solid rgba(255,255,255,0.04);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  }
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .card-title {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--text-muted);
+  }
+  .card-note {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .clock-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .clock-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-muted);
+  }
+  .clock-value {
+    font-family: var(--font-mono);
+    font-size: 24px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: linear-gradient(120deg, #05060a 0, #151826 100%);
+    border: 1px solid rgba(79,209,197,0.25);
+    color: var(--accent);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .clock-value span {
+    flex: 1;
+  }
+  .clock-tag {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 2px 6px;
+    border-radius: 999px;
+    border: 1px solid rgba(79,209,197,0.4);
+    color: var(--accent);
+  }
+  .clock-value.muted {
+    border-color: rgba(255,255,255,0.06);
+    color: var(--text-muted);
+  }
+  .clock-value.danger {
+    border-color: rgba(245,101,101,0.6);
+    color: var(--danger);
+  }
+  textarea {
+    width: 100%;
+    min-height: 130px;
+    resize: vertical;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: #05060a;
+    color: var(--text-main);
+    padding: 10px 11px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.4;
+    outline: none;
+  }
+  textarea::placeholder {
+    color: #4a5568;
+  }
+  .help-text {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    margin-bottom: 4px;
+  }
+  button {
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: #111827;
+    color: var(--text-main);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    padding: 7px 12px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.05s, box-shadow 0.15s, border-color 0.15s;
+  }
+  button.primary {
+    background: linear-gradient(135deg, var(--accent-soft), var(--accent));
+    border-color: rgba(79,209,197,0.8);
+    color: #020617;
+    box-shadow: 0 0 18px rgba(79,209,197,0.45);
+  }
+  button.danger {
+    background: linear-gradient(135deg, #742a2a, #f56565);
+    border-color: rgba(245,101,101,0.8);
+    color: #1a202c;
+  }
+  button:active {
+    transform: translateY(1px);
+    box-shadow: none;
+  }
+  .badge {
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  .badge strong {
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .stopwatch-time {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: linear-gradient(120deg, #05060a 0, #151826 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .stopwatch-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .stopwatch-buttons button {
+    flex: 1;
+  }
+  .analog-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .analog-row {
+    display: flex;
+    gap: 10px;
+  }
+  canvas {
+    background: radial-gradient(circle at top, #111827 0, #020617 70%);
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .digital-small {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .digital-small-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-muted);
+  }
+  .digital-small-value {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    padding: 6px 8px;
+    border-radius: 10px;
+    background: linear-gradient(120deg, #05060a 0, #151826 100%);
+    border: 1px solid rgba(79,209,197,0.25);
+    color: var(--accent);
+  }
+  .status-line {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .status-line strong {
+    color: var(--accent);
+    font-weight: 500;
+  }
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="left">
-      <a href="../launch-deck.html" style="position: fixed; top: 12px; left: 12px; z-index: 100;">
-        <img src="../icon.png" alt="" style="height: 60px; background: black; border-radius: 4px;">
-      </a>
+<div class="app">
+  <div class="app-header">
+    <div>
+      <div class="title">LaunchCheck</div>
+      <div class="subtitle">Tiny always-on-top brain for time blocks.</div>
+    </div>
+    <div class="subtitle" id="statusText"></div>
+  </div>
 
-      <h1>Clock</h1>
-
-      <h2>Current</h2>
-      <div class="clock" id="current">--:--:--</div>
-
-      <h2>Current Time Left</h2>
-      <div class="clock" id="left">--:--:--</div>
-
-      <h2>End</h2>
-      <div class="clock" id="end">--:--:--</div>
-
-      <h2>Schedule</h2>
-      <div class="panel">
-        <div class="small">Enter schedule lines (<code>start/end</code> like <code>08:00/08:58</code>), one per line.</div>
-        <textarea id="scheduleBox"></textarea>
-        <div class="controls">
-          <button id="applyScheduleBtn">Apply Schedule</button>
-          <button id="resetScheduleBtn">Reset Schedule</button>
-          <div class="small" style="align-self:center;margin-left:auto">Saved in cookie</div>
-        </div>
+  <div class="grid">
+    <!-- CLOCK + SCHEDULE SUMMARY -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Clock</div>
+        <div class="card-note" id="scheduleSummary">No schedule loaded</div>
       </div>
-
-      <h2>Stopwatch</h2>
-      <div class="panel">
-        <div class="clock" id="stopwatchDisplay">00:00:00</div>
-        <div class="row">
-          <button id="swStart">Start</button>
-          <button id="swPause">Pause</button>
-          <button id="swReset">Reset</button>
-          <div class="small" style="margin-left:auto">Persists in cookie</div>
+      <div class="clock-row">
+        <div>
+          <div class="clock-label">Current</div>
+          <div class="clock-value" id="currentTime">
+            <span>--:--:--</span>
+            <span class="clock-tag">Now</span>
+          </div>
         </div>
-      </div>
-
-      <h2>Countdown Timer</h2>
-      <div class="panel">
-        <div class="label">Enter duration (HH:MM:SS or MM:SS)</div>
-        <div class="row">
-          <input id="timerInput" type="text" placeholder="05:00" />
-          <button id="timerSet">Set</button>
+        <div>
+          <div class="clock-label">Current Time Left</div>
+          <div class="clock-value muted" id="timeLeft">
+            <span>--:--:--</span>
+            <span class="clock-tag">Block</span>
+          </div>
         </div>
-        <div style="margin-top:10px">
-          <div class="clock" id="timerDisplay">--:--:--</div>
-          <div class="row">
-            <button id="tStart">Start</button>
-            <button id="tPause">Pause</button>
-            <button id="tReset">Reset</button>
-            <div class="small" style="margin-left:auto">Persists in cookie</div>
+        <div>
+          <div class="clock-label">End</div>
+          <div class="clock-value muted" id="endTime">
+            <span>--:--:--</span>
+            <span class="clock-tag">Until</span>
           </div>
         </div>
       </div>
-
-      <footer>
-        <div>Made by Nathan Marty</div>
-      </footer>
+      <div class="status-line" id="blockStatus" style="margin-top:10px;">
+        No active block. Next block: <strong>—</strong>
+      </div>
     </div>
 
-    <div class="right">
-      <h2>Analog Clock</h2>
-      <canvas id="analog" width="280" height="280"></canvas>
-      <div class="small">Analog + digital, because why not</div>
-      <canvas id="analog" width="280" height="280" aria-label="Analog clock"></canvas>
-      <div class="small">analog clock</div>
+    <!-- SCHEDULE EDITOR -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Schedule</div>
+        <div class="card-note">Saved in localStorage</div>
+      </div>
+      <textarea id="scheduleInput" placeholder="08:00/08:58
+09:00/09:25
+13:00/13:50"></textarea>
+      <div class="help-text">
+        Format: <code>HH:MM/HH:MM</code>, one per line. 24‑hour clock. Lines are sorted automatically.
+      </div>
+      <div class="btn-row">
+        <button class="primary" id="applyScheduleBtn">Apply Schedule</button>
+        <button id="resetScheduleBtn">Reset</button>
+      </div>
+      <div class="badge" id="scheduleError"></div>
     </div>
+
+    <!-- STOPWATCH + ANALOG -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Stopwatch</div>
+        <div class="card-note">Persists in localStorage</div>
+      </div>
+      <div class="stopwatch-time" id="stopwatchDisplay">00:00:00</div>
+      <div class="stopwatch-buttons">
+        <button class="primary" id="startStopwatchBtn">Start</button>
+        <button id="pauseStopwatchBtn">Pause</button>
+        <button class="danger" id="resetStopwatchBtn">Reset</button>
+      </div>
+      <div class="badge" id="stopwatchStatus"></div>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:12px 0;">
+
+      <div class="card-header" style="margin-bottom:8px;">
+        <div class="card-title">Analog Clock</div>
+        <div class="card-note">Analog + digital, because why not</div>
+      </div>
+      <div class="analog-wrapper">
+        <div class="analog-row">
+          <canvas id="analogCanvas" width="120" height="120"></canvas>
+          <div class="digital-small">
+            <div>
+              <div class="digital-small-label">Digital</div>
+              <div class="digital-small-value" id="digitalSmall">--:--:--</div>
+            </div>
+            <div>
+              <div class="digital-small-label">Date</div>
+              <div class="digital-small-value" id="dateSmall">----</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
+</div>
 
 <script>
-/* -------------------------
-   Cookie helpers
-   ------------------------- */
-/* Cookie helpers */
-function setCookie(name, value, days = 365) {
-  const d = new Date();
-  d.setTime(d.getTime() + (days*24*60*60*1000));
-  document.cookie = name + "=" + encodeURIComponent(value) + ";expires=" + d.toUTCString() + ";path=/";
-}
-function getCookie(name) {
-  const cname = name + "=";
-  const decoded = decodeURIComponent(document.cookie || "");
-  const parts = decoded.split(";");
-  for (let p of parts) {
-    p = p.trim();
-    if (p.indexOf(cname) === 0) return p.substring(cname.length);
+(function() {
+  // ---------- UTILITIES ----------
+  function pad(n) {
+    return n.toString().padStart(2, "0");
   }
-  return "";
-}
 
-/* -------------------------
-   Schedule parsing & UI
-   ------------------------- */
-/* Schedule parsing & UI */
-const defaultSchedule = `08:00/08:58
-09:02/09:44
-09:48/10:30
-10:34/11:16
-11:20/12:23
-12:27/13:25
-13:29/14:27
-14:31/15:30
-15:30/16:00`;
-14:31/15:30`;
+  function formatTime(h, m, s) {
+    return pad(h) + ":" + pad(m) + ":" + pad(s);
+  }
 
-let periods = []; // array of [startSec,endSec] in seconds from midnight
-let periods = []; // [startSec,endSec]
+  function parseHM(str) {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(str.trim());
+    if (!m) return null;
+    let h = parseInt(m[1], 10);
+    let min = parseInt(m[2], 10);
+    if (h < 0 || h > 23 || min < 0 || min > 59) return null;
+    return { h, m: min };
+  }
 
-function toSeconds(t) {
-  // Accept H:MM or HH:MM
-  const parts = t.split(":").map(s => s.trim());
-  if (parts.length === 1) return parseInt(parts[0],10) * 3600;
-  if (parts.length === 1) return Number(parts[0]) * 3600;
-  const h = Number(parts[0]) || 0;
-  const m = Number(parts[1]) || 0;
-  const s = parts[2] ? Number(parts[2]) : 0;
-  return h*3600 + m*60 + s;
-}
-function pad(n, len=2){ return String(n).padStart(len,"0"); }
-function formatClock(h,m,s){
-  let hrs = h;
-  const ampm = hrs >= 12 ? "PM" : "AM";
-  hrs = hrs % 12; if (hrs === 0) hrs = 12;
-  return `${hrs}:${pad(m)}:${pad(s)} ${ampm}`;
-}
-function formatDuration(sec){
-  if (sec === null || sec === undefined) return "--:--:--";
-  if (sec < 0) return "--:--:--";
-  const h = Math.floor(sec/3600);
-  const m = Math.floor((sec%3600)/60);
-  const s = sec % 60;
-  return `${pad(h)}:${pad(m)}:${pad(s)}`;
-}
+  function toMinutes(h, m) {
+    return h * 60 + m;
+  }
 
-function applyScheduleFromText(text) {
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-  const lines = (text||"").split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-  periods = [];
-  let lastEnd = null;
-  for (const line of lines) {
-    const parts = line.split("/");
-    if (parts.length !== 2) continue;
-    const start = toSeconds(parts[0]);
-    const end = toSeconds(parts[1]);
-    if (!isFinite(start) || !isFinite(end)) continue;
-    // if gap between lastEnd and start, add break interval
-    if (lastEnd !== null && start > lastEnd) {
-      periods.push([lastEnd, start]);
-      periods.push([lastEnd, start]); // break
+  function fromMinutes(total) {
+    const h = Math.floor(total / 60) % 24;
+    const m = total % 60;
+    return { h, m };
+  }
+
+  function secondsToHMS(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const r = s % 60;
+    return { h, m, s: r };
+  }
+
+  // ---------- DOM ----------
+  const currentTimeEl = document.getElementById("currentTime").querySelector("span");
+  const timeLeftEl = document.getElementById("timeLeft").querySelector("span");
+  const endTimeEl = document.getElementById("endTime").querySelector("span");
+  const timeLeftBox = document.getElementById("timeLeft");
+  const endTimeBox = document.getElementById("endTime");
+  const blockStatusEl = document.getElementById("blockStatus");
+  const scheduleSummaryEl = document.getElementById("scheduleSummary");
+  const statusTextEl = document.getElementById("statusText");
+
+  const scheduleInput = document.getElementById("scheduleInput");
+  const applyScheduleBtn = document.getElementById("applyScheduleBtn");
+  const resetScheduleBtn = document.getElementById("resetScheduleBtn");
+  const scheduleErrorEl = document.getElementById("scheduleError");
+
+  const stopwatchDisplay = document.getElementById("stopwatchDisplay");
+  const startStopwatchBtn = document.getElementById("startStopwatchBtn");
+  const pauseStopwatchBtn = document.getElementById("pauseStopwatchBtn");
+  const resetStopwatchBtn = document.getElementById("resetStopwatchBtn");
+  const stopwatchStatusEl = document.getElementById("stopwatchStatus");
+
+  const analogCanvas = document.getElementById("analogCanvas");
+  const ctx = analogCanvas.getContext("2d");
+  const digitalSmallEl = document.getElementById("digitalSmall");
+  const dateSmallEl = document.getElementById("dateSmall");
+
+  // ---------- SCHEDULE STATE ----------
+  let scheduleBlocks = []; // [{startMin, endMin}]
+  const schedule = "launchcheck_schedule_v1";
+
+  function loadSchedule() {
+    try {
+      const raw = localStorage.getItem(schedule);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return;
+      scheduleBlocks = parsed;
+      renderScheduleSummary();
+      scheduleInput.value = parsed
+        .map(b => {
+          const s = fromMinutes(b.startMin);
+          const e = fromMinutes(b.endMin);
+          return pad(s.h) + ":" + pad(s.m) + "/" + pad(e.h) + ":" + pad(e.m);
+        })
+        .join("\n");
+    } catch (e) {
+      console.warn("Failed to load schedule", e);
     }
-    periods.push([start, end]);
-    lastEnd = end;
   }
-}
 
-document.getElementById("applyScheduleBtn").addEventListener("click", () => {
-  const txt = document.getElementById("scheduleBox").value.trim();
-  setCookie("schedule", txt, 365);
-  applyScheduleFromText(txt);
-});
-document.getElementById("resetScheduleBtn").addEventListener("click", () => {
-  document.getElementById("scheduleBox").value = defaultSchedule;
-  setCookie("schedule", defaultSchedule, 365);
-  applyScheduleFromText(defaultSchedule);
-});
+  function saveSchedule() {
+    localStorage.setItem(schedule, JSON.stringify(scheduleBlocks));
+  }
 
-/* -------------------------
-   Stopwatch
-   ------------------------- */
-/* Stopwatch */
-let swInterval = null;
-let swSeconds = Number(getCookie("stopwatch_seconds") || 0);
-let swRunning = (getCookie("stopwatch_running") === "1");
+  function renderScheduleSummary() {
+    if (!scheduleBlocks.length) {
+      scheduleSummaryEl.textContent = "No schedule loaded";
+      return;
+    }
+    const first = scheduleBlocks[0];
+    const last = scheduleBlocks[scheduleBlocks.length - 1];
+    const fs = fromMinutes(first.startMin);
+    const le = fromMinutes(last.endMin);
+    scheduleSummaryEl.textContent =
+      "Blocks: " + scheduleBlocks.length +
+      " • " + pad(fs.h) + ":" + pad(fs.m) +
+      " → " + pad(le.h) + ":" + pad(le.m);
+  }
 
-function updateStopwatchDisplay(){
-  document.getElementById("stopwatchDisplay").textContent = formatDuration(swSeconds);
-}
-function swStart(){
-  if (swInterval) return;
-  swRunning = true;
-  setCookie("stopwatch_running", "1", 365);
-  swInterval = setInterval(() => {
-    swSeconds++;
-    setCookie("stopwatch_seconds", String(swSeconds), 365);
-    updateStopwatchDisplay();
-  }, 1000);
-}
-function swPause(){
-  if (swInterval) clearInterval(swInterval);
-  swInterval = null;
-  swRunning = false;
-  setCookie("stopwatch_running", "0", 365);
-}
-function swReset(){
-  swPause();
-  swSeconds = 0;
-  setCookie("stopwatch_seconds", "0", 365);
-  updateStopwatchDisplay();
-}
-document.getElementById("swStart").addEventListener("click", swStart);
-document.getElementById("swPause").addEventListener("click", swPause);
-document.getElementById("swReset").addEventListener("click", swReset);
-
-/* -------------------------
-   Countdown Timer
-   ------------------------- */
-/* Countdown Timer */
-let timerInterval = null;
-let timerRemaining = null; // seconds remaining, null if not set
-let timerRemaining = null;
-let timerRunning = false;
-
-function parseDurationInput(str){
-  str = (str||"").trim();
-  if (!str) return 0;
-  const parts = str.split(":").map(Number).reverse();
-  // parts[0] = seconds or minutes if only one part
-  let s = 0;
-  if (parts.length >= 1) s += (parts[0] || 0);
-  if (parts.length >= 2) s += (parts[1] || 0) * 60;
-  if (parts.length >= 3) s += (parts[2] || 0) * 3600;
-  return s;
-}
-function setTimerFromInput(){
-  const val = document.getElementById("timerInput").value.trim();
-  const secs = parseDurationInput(val);
-  timerRemaining = secs;
-  timerRunning = false;
-  clearInterval(timerInterval); timerInterval = null;
-  saveTimerCookie();
-  updateTimerDisplay();
-}
-function updateTimerDisplay(){
-  document.getElementById("timerDisplay").textContent = timerRemaining === null ? "--:--:--" : formatDuration(timerRemaining);
-}
-function saveTimerCookie(){
-  const obj = { remaining: timerRemaining, running: timerRunning ? 1 : 0, updatedAt: Date.now() };
-  setCookie("timer_state", JSON.stringify(obj), 365);
-}
-function loadTimerCookie(){
-  const raw = getCookie("timer_state");
-  if (!raw) return;
-  try {
-    const obj = JSON.parse(raw);
-    timerRemaining = typeof obj.remaining === "number" ? obj.remaining : null;
-    timerRunning = obj.running === 1;
-    // If running, we don't try to compute elapsed across reloads (keeps it simple).
-  } catch(e){}
-}
-function tStart(){
-  if (timerRemaining === null || timerRemaining <= 0) return;
-  if (timerInterval) return;
-  timerRunning = true;
-  saveTimerCookie();
-  timerInterval = setInterval(() => {
-    if (timerRemaining > 0) {
-      timerRemaining--;
-      saveTimerCookie();
-      updateTimerDisplay();
-      if (timerRemaining <= 0) {
-        clearInterval(timerInterval);
-        timerInterval = null;
-        timerRunning = false;
-        saveTimerCookie();
-        // simple alert when done
-        try { new Audio?.('').play().catch(()=>{}); } catch(e){}
-        // flash title briefly
-        const old = document.title;
-        document.title = "TIMER DONE!";
-        setTimeout(()=>document.title = old, 2000);
+  function applyScheduleFromText() {
+    const lines = scheduleInput.value.split("\n").map(l => l.trim()).filter(Boolean);
+    if (!lines.length) {
+      scheduleBlocks = [];
+      saveSchedule();
+      renderScheduleSummary();
+      scheduleErrorEl.textContent = "Cleared schedule.";
+      scheduleErrorEl.style.color = "var(--text-muted)";
+      return;
+    }
+    const blocks = [];
+    for (const line of lines) {
+      const parts = line.split("/");
+      if (parts.length !== 2) {
+        scheduleErrorEl.textContent = "Bad line: \"" + line + "\" (need start/end)";
+        scheduleErrorEl.style.color = "var(--danger)";
+        return;
       }
+      const start = parseHM(parts[0]);
+      const end = parseHM(parts[1]);
+      if (!start || !end) {
+        scheduleErrorEl.textContent = "Bad time in line: \"" + line + "\"";
+        scheduleErrorEl.style.color = "var(--danger)";
+        return;
+      }
+      const startMin = toMinutes(start.h, start.m);
+      const endMin = toMinutes(end.h, end.m);
+      if (endMin <= startMin) {
+        scheduleErrorEl.textContent = "End must be after start in line: \"" + line + "\"";
+        scheduleErrorEl.style.color = "var(--danger)";
+        return;
+      }
+      blocks.push({ startMin, endMin });
     }
-  }, 1000);
-}
-function tPause(){
-  if (timerInterval) clearInterval(timerInterval);
-  timerInterval = null;
-  timerRunning = false;
-  saveTimerCookie();
-}
-function tReset(){
-  tPause();
-  timerRemaining = null;
-  saveTimerCookie();
-  updateTimerDisplay();
-}
-document.getElementById("timerSet").addEventListener("click", setTimerFromInput);
-document.getElementById("tStart").addEventListener("click", tStart);
-document.getElementById("tPause").addEventListener("click", tPause);
-document.getElementById("tReset").addEventListener("click", tReset);
+    blocks.sort((a, b) => a.startMin - b.startMin);
+    scheduleBlocks = blocks;
+    saveSchedule();
+    renderScheduleSummary();
+    scheduleErrorEl.textContent = "Schedule applied.";
+    scheduleErrorEl.style.color = "var(--accent)";
+  }
 
-/* -------------------------
-   Analog + Digital clock update
-   ------------------------- */
-/* Analog + Digital clock update */
-function updateMainClock(){
-  const now = new Date();
-  const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
-  document.getElementById("current").textContent = formatClock(h,m,s);
+  function resetSchedule() {
+    scheduleBlocks = [];
+    saveSchedule();
+    scheduleInput.value = "";
+    renderScheduleSummary();
+    scheduleErrorEl.textContent = "Schedule reset.";
+    scheduleErrorEl.style.color = "var(--text-muted)";
+  }
 
-  // schedule left/end
-  const currentSec = h*3600 + m*60 + s;
-  let left = "--:--:--", end = "--:--:--";
-  if (periods.length > 0) {
-    for (let i=0;i<periods.length;i++){
-      const [start,endSec] = periods[i];
-      if (currentSec >= start && currentSec <= endSec) {
-        left = formatDuration(endSec - currentSec);
-        const endH = Math.floor(endSec/3600);
-        const endM = Math.floor((endSec%3600)/60);
-        const endS = endSec%60;
-        end = formatClock(endH,endM,endS);
+  function findCurrentAndNextBlock(nowMin) {
+    let current = null;
+    let next = null;
+    for (const b of scheduleBlocks) {
+      if (nowMin >= b.startMin && nowMin < b.endMin) {
+        current = b;
         break;
       }
+      if (nowMin < b.startMin && !next) {
+        next = b;
+      }
+    }
+    if (!current && !next && scheduleBlocks.length) {
+      // after last block: no current, no next
+    }
+    return { current, next };
+  }
+
+  // ---------- STOPWATCH STATE ----------
+  const STOPWATCH_KEY = "launchcheck_stopwatch_v1";
+  let swRunning = false;
+  let swStartTimestamp = null; // ms
+  let swAccumulated = 0; // ms
+  let swInterval = null;
+
+  function loadStopwatch() {
+    try {
+      const raw = localStorage.getItem(STOPWATCH_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      swRunning = !!data.running;
+      swStartTimestamp = data.startTimestamp || null;
+      swAccumulated = data.accumulated || 0;
+
+      if (swRunning && swStartTimestamp) {
+        // adjust accumulated to now
+        const now = Date.now();
+        const delta = now - swStartTimestamp;
+        if (delta > 0) {
+          swAccumulated += delta;
+          swStartTimestamp = now;
+        }
+        startStopwatchInterval();
+      }
+      renderStopwatch();
+    } catch (e) {
+      console.warn("Failed to load stopwatch", e);
     }
   }
-  document.getElementById("left").textContent = left;
-  document.getElementById("end").textContent = end;
 
-  // draw analog
-  // update tab title with left and current (left first so it's visible)
-  document.title = `${left} / ${formatClock(h,m,s)}`;
+  function saveStopwatch() {
+    localStorage.setItem(
+      STOPWATCH_KEY,
+      JSON.stringify({
+        running: swRunning,
+        startTimestamp: swStartTimestamp,
+        accumulated: swAccumulated
+      })
+    );
+  }
 
-  drawAnalog(now);
-}
+  function startStopwatchInterval() {
+    if (swInterval) return;
+    swInterval = setInterval(() => {
+      renderStopwatch();
+    }, 200);
+  }
 
-/* -------------------------
-   Analog drawing
-   ------------------------- */
-/* Analog drawing: hands point like a real clock (12 at top) */
-const canvas = document.getElementById("analog");
-const ctx = canvas.getContext("2d");
-const R = canvas.width / 2;
+  function stopStopwatchInterval() {
+    if (swInterval) {
+      clearInterval(swInterval);
+      swInterval = null;
+    }
+  }
 
-function drawAnalog(now) {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.save();
-  ctx.translate(R,R);
+  function renderStopwatch() {
+    let elapsed = swAccumulated;
+    if (swRunning && swStartTimestamp) {
+      elapsed += Date.now() - swStartTimestamp;
+    }
+    const sec = elapsed / 1000;
+    const { h, m, s } = secondsToHMS(sec);
+    stopwatchDisplay.textContent = pad(h) + ":" + pad(m) + ":" + pad(s);
+    stopwatchStatusEl.textContent = swRunning ? "Running…" : "Paused.";
+  }
 
-  // face
-  ctx.beginPath();
-  ctx.arc(0,0,R-6,0,Math.PI*2);
-  ctx.fillStyle = "#071018";
-  ctx.fill();
-  ctx.lineWidth = 4;
-  ctx.strokeStyle = "#0eaaff";
-  ctx.stroke();
+  function startStopwatch() {
+    if (swRunning) return;
+    swRunning = true;
+    swStartTimestamp = Date.now();
+    startStopwatchInterval();
+    saveStopwatch();
+    renderStopwatch();
+  }
 
-  // ticks
-  for (let i=0;i<60;i++){
-    const ang = i * Math.PI/30;
-    const ang = (i * Math.PI/30) - Math.PI/2; // rotate so 12 is top
-    const inner = (i%5===0) ? R-22 : R-16;
-    const outer = R-6;
+  function pauseStopwatch() {
+    if (!swRunning) return;
+    swRunning = false;
+    if (swStartTimestamp) {
+      swAccumulated += Date.now() - swStartTimestamp;
+      swStartTimestamp = null;
+    }
+    stopStopwatchInterval();
+    saveStopwatch();
+    renderStopwatch();
+  }
+
+  function resetStopwatch() {
+    swRunning = false;
+    swStartTimestamp = null;
+    swAccumulated = 0;
+    stopStopwatchInterval();
+    saveStopwatch();
+    renderStopwatch();
+  }
+
+  // ---------- ANALOG CLOCK ----------
+  function drawAnalogClock(date) {
+    const w = analogCanvas.width;
+    const h = analogCanvas.height;
+    const r = Math.min(w, h) / 2 - 6;
+    const cx = w / 2;
+    const cy = h / 2;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // face
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    // outer ring
     ctx.beginPath();
-    ctx.moveTo(inner*Math.cos(ang), inner*Math.sin(ang));
-    ctx.lineTo(outer*Math.cos(ang), outer*Math.sin(ang));
-    ctx.strokeStyle = (i%5===0) ? "#0eaaff" : "rgba(14,170,255,0.35)";
-    ctx.lineWidth = (i%5===0) ? 3 : 1;
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = "#020617";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.lineWidth = 2;
     ctx.stroke();
+
+    // ticks
+    for (let i = 0; i < 60; i++) {
+      const angle = (Math.PI * 2 * i) / 60;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      const inner = i % 5 === 0 ? r - 10 : r - 5;
+      ctx.beginPath();
+      ctx.moveTo(cos * inner, sin * inner);
+      ctx.lineTo(cos * r, sin * r);
+      ctx.strokeStyle = i % 5 === 0 ? "rgba(79,209,197,0.9)" : "rgba(148,163,184,0.7)";
+      ctx.lineWidth = i % 5 === 0 ? 2 : 1;
+      ctx.stroke();
+    }
+
+    const hours = date.getHours() % 12;
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
+
+    // hour hand
+    const hourAngle = (Math.PI * 2 * (hours + minutes / 60)) / 12;
+    ctx.save();
+    ctx.rotate(hourAngle);
+    ctx.beginPath();
+    ctx.moveTo(0, 4);
+    ctx.lineTo(0, -r * 0.5);
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.stroke();
+    ctx.restore();
+
+    // minute hand
+    const minuteAngle = (Math.PI * 2 * (minutes + seconds / 60)) / 60;
+    ctx.save();
+    ctx.rotate(minuteAngle);
+    ctx.beginPath();
+    ctx.moveTo(0, 6);
+    ctx.lineTo(0, -r * 0.75);
+    ctx.strokeStyle = "#4fd1c5";
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.stroke();
+    ctx.restore();
+
+    // second hand
+    const secondAngle = (Math.PI * 2 * seconds) / 60;
+    ctx.save();
+    ctx.rotate(secondAngle);
+    ctx.beginPath();
+    ctx.moveTo(0, 10);
+    ctx.lineTo(0, -r * 0.8);
+    ctx.strokeStyle = "#f56565";
+    ctx.lineWidth = 1;
+    ctx.lineCap = "round";
+    ctx.stroke();
+    ctx.restore();
+
+    // center
+    ctx.beginPath();
+    ctx.arc(0, 0, 3, 0, Math.PI * 2);
+    ctx.fillStyle = "#4fd1c5";
+    ctx.fill();
+
+    ctx.restore();
   }
 
-  // numbers
-  ctx.fillStyle = "#0eaaff";
-  ctx.font = "16px system-ui, Arial";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  for (let n=1;n<=12;n++){
-    const ang = (n * Math.PI/6) - Math.PI/2;
-    const x = Math.cos(ang) * (R - 44);
-    const y = Math.sin(ang) * (R - 44);
-    ctx.fillText(String(n), x, y);
+  // ---------- MAIN TICK ----------
+  function tick() {
+    const now = new Date();
+    const h = now.getHours();
+    const m = now.getMinutes();
+    const s = now.getSeconds();
+    currentTimeEl.textContent = formatTime(h, m, s);
+    digitalSmallEl.textContent = formatTime(h, m, s);
+
+    const dateStr = now.toLocaleDateString(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric"
+    });
+    dateSmallEl.textContent = dateStr;
+
+    const nowMin = toMinutes(h, m);
+    const { current, next } = findCurrentAndNextBlock(nowMin);
+
+    if (current) {
+      const end = fromMinutes(current.endMin);
+      const secondsLeft = (current.endMin - nowMin) * 60 - s;
+      const { h: lh, m: lm, s: ls } = secondsToHMS(secondsLeft);
+      timeLeftEl.textContent = pad(lh) + ":" + pad(lm) + ":" + pad(ls);
+      endTimeEl.textContent = pad(end.h) + ":" + pad(end.m) + ":00";
+
+      timeLeftBox.classList.remove("muted");
+      endTimeBox.classList.remove("muted");
+      const isLow = secondsLeft <= 5 * 60;
+      timeLeftBox.classList.toggle("danger", isLow);
+      endTimeBox.classList.toggle("danger", isLow);
+
+      blockStatusEl.innerHTML =
+        "In block: <strong>" +
+        pad(fromMinutes(current.startMin).h) + ":" + pad(fromMinutes(current.startMin).m) +
+        " → " +
+        pad(end.h) + ":" + pad(end.m) +
+        "</strong>";
+    } else {
+      timeLeftEl.textContent = "--:--:--";
+      endTimeEl.textContent = "--:--:--";
+      timeLeftBox.classList.add("muted");
+      endTimeBox.classList.add("muted");
+      timeLeftBox.classList.remove("danger");
+      endTimeBox.classList.remove("danger");
+
+      if (next) {
+        const ns = fromMinutes(next.startMin);
+        const ne = fromMinutes(next.endMin);
+        blockStatusEl.innerHTML =
+          "No active block. Next: <strong>" +
+          pad(ns.h) + ":" + pad(ns.m) +
+          " → " +
+          pad(ne.h) + ":" + pad(ne.m) +
+          "</strong>";
+      } else if (scheduleBlocks.length) {
+        blockStatusEl.innerHTML =
+          "No more blocks today. First block was <strong>" +
+          pad(fromMinutes(scheduleBlocks[0].startMin).h) + ":" +
+          pad(fromMinutes(scheduleBlocks[0].startMin).m) +
+          "</strong>";
+      } else {
+        blockStatusEl.innerHTML = "No active block. Next block: <strong>—</strong>";
+      }
+    }
+
+    drawAnalogClock(now);
   }
 
-  // hands
-  // hands angles (12 at top)
-  const hour = now.getHours() % 12;
-  const minute = now.getMinutes();
-  const second = now.getSeconds();
+  // ---------- INIT ----------
+  applyScheduleBtn.addEventListener("click", applyScheduleFromText);
+  resetScheduleBtn.addEventListener("click", resetSchedule);
 
-  const hourAngle = ((hour + minute/60 + second/3600) * Math.PI/6) - Math.PI/2;
-  const minuteAngle = ((minute + second/60) * Math.PI/30) - Math.PI/2;
-  const secondAngle = (second * Math.PI/30) - Math.PI/2;
+  startStopwatchBtn.addEventListener("click", startStopwatch);
+  pauseStopwatchBtn.addEventListener("click", pauseStopwatch);
+  resetStopwatchBtn.addEventListener("click", resetStopwatch);
 
-  // hour
-  // hour hand
-  drawHand(ctx, hourAngle, R*0.45, 7, "#dbefff");
-  // minute
-  // minute hand
-  drawHand(ctx, minuteAngle, R*0.62, 5, "#bfeaff");
-  // second
-  // second hand
-  drawHand(ctx, secondAngle, R*0.78, 2, "#00d0ff");
+  loadSchedule();
+  loadStopwatch();
+  renderScheduleSummary();
+  renderStopwatch();
+  statusTextEl.textContent = "All state is local to this browser.";
 
-  // center
-  // center dot
-  ctx.beginPath();
-  ctx.arc(0,0,6,0,Math.PI*2);
-  ctx.fillStyle = "#00aaff";
-  ctx.fill();
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
+<script>
+// Reads the schedule cookie named "schedule"
+function getScheduleFromCookie() {
+    const match = document.cookie.match(/(?:^|;\s*)schedule=([^;]+)/);
+    if (!match) return [];
 
-  ctx.restore();
+    // Cookie format: "08:00/08:58 09:02/09:44 ..."
+    const raw = decodeURIComponent(match[1]).trim();
+    const lines = raw.split(/[\n ]+/).filter(Boolean);
+
+    const blocks = [];
+    for (let line of lines) {
+        const [s, e] = line.split("/");
+        if (!s || !e) continue;
+
+        const [sh, sm] = s.split(":").map(Number);
+        const [eh, em] = e.split(":").map(Number);
+
+        let start = sh * 60 + sm;
+        let end = eh * 60 + em;
+
+        if (end <= start) end = start + 1; // auto-fix bad lines
+
+        blocks.push({ start, end });
+    }
+
+    return blocks.sort((a, b) => a.start - b.start);
 }
-function drawHand(ctx, angle, length, width, color="#fff"){
-  ctx.beginPath();
-  ctx.lineWidth = width;
-  ctx.lineCap = "round";
-  ctx.strokeStyle = color;
-  ctx.moveTo(0,0);
-  ctx.lineTo(Math.cos(angle)*length, Math.sin(angle)*length);
-  ctx.stroke();
+
+// Format helpers
+function pad(n) { return n.toString().padStart(2, "0"); }
+function fmt(h, m, s) { return pad(h) + ":" + pad(m) + ":" + pad(s); }
+function fmtHM(min) { return pad(Math.floor(min / 60)) + ":" + pad(min % 60); }
+
+// Main loop
+function updateTabTitle() {
+    const blocks = getScheduleFromCookie();
+
+    const now = new Date();
+    const h = now.getHours();
+    const m = now.getMinutes();
+    const s = now.getSeconds();
+    const nowMin = h * 60 + m;
+
+    let current = null;
+    let next = null;
+
+    for (let b of blocks) {
+        if (nowMin >= b.start && nowMin < b.end) {
+            current = b;
+            break;
+        }
+        if (nowMin < b.start && !next) next = b;
+    }
+
+    // If in a block → show time left
+    if (current) {
+        const secLeft = (current.end - nowMin) * 60 - s;
+        const lh = Math.floor(secLeft / 3600);
+        const lm = Math.floor((secLeft % 3600) / 60);
+        const ls = secLeft % 60;
+
+        document.title = fmt(h, m, s) + " — " + fmt(lh, lm, ls);
+    } 
+    else {
+        // No block active
+        document.title = fmt(h, m, s) + " — No block";
+    }
 }
 
-/* -------------------------
-   Initialization & intervals
-   ------------------------- */
-/* Initialization */
-function init(){
-  // schedule load
-  // schedule
-  const savedSchedule = getCookie("schedule");
-  document.getElementById("scheduleBox").value = savedSchedule || defaultSchedule;
-  applyScheduleFromText(savedSchedule || defaultSchedule);
-
-  // stopwatch init
-  // stopwatch
-  updateStopwatchDisplay();
-  if (swRunning) swStart();
-
-  // timer init
-  // timer
-  loadTimerCookie();
-  updateTimerDisplay();
-  if (timerRunning) {
-    // if cookie said running, resume ticking
-    tStart();
-  }
-
-  // main clock tick
-  if (timerRunning) tStart();
-
-  // wire schedule buttons
-  document.getElementById("applyScheduleBtn").addEventListener("click", () => {
-    const txt = document.getElementById("scheduleBox").value.trim();
-    setCookie("schedule", txt, 365);
-    applyScheduleFromText(txt);
-  });
-  document.getElementById("resetScheduleBtn").addEventListener("click", () => {
-    document.getElementById("scheduleBox").value = defaultSchedule;
-    setCookie("schedule", defaultSchedule, 365);
-    applyScheduleFromText(defaultSchedule);
-  });
-
-  // main tick
-  updateMainClock();
-  setInterval(updateMainClock, 1000);
-}
-window.addEventListener("load", init);
-
-// save state on unload
-/* Save on unload */
-window.addEventListener("beforeunload", () => {
-  // cookies already updated frequently; ensure running flags saved
-  setCookie("stopwatch_seconds", String(swSeconds), 365);
-  setCookie("stopwatch_running", swRunning ? "1" : "0", 365);
-  saveTimerCookie();
-});
+// Run every second
+setInterval(updateTabTitle, 1000);
+updateTabTitle();
 </script>
 </body>
 </html>
