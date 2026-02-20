@@ -133,29 +133,21 @@
 <script>
 (function(){
 
-  // -------------------------
-  // ADMIN CHECK
-  // -------------------------
-  function hasAdminCookie() {
-    return document.cookie.split("; ").some(c => c.trim() === "admin=true");
+  function isAdmin() {
+    return localStorage.getItem("admin") === "true";
   }
 
-  if (!hasAdminCookie()) {
+  if (!isAdmin()) {
     document.getElementById("status").textContent = "Access denied. Redirecting...";
     setTimeout(() => location.href = "launch-deck.html", 600);
     return;
   }
 
-  // Show UI
   document.getElementById("status").style.display = "none";
   document.getElementById("adminUI").style.display = "block";
 
-  // -------------------------
-  // COOKIE VIEWER + EDITOR
-  // -------------------------
   function loadCookies() {
     const table = document.getElementById("cookieTable");
-
     table.innerHTML = `
       <tr>
         <th>Name</th>
@@ -163,17 +155,12 @@
         <th>Actions</th>
       </tr>
     `;
-
     const cookies = document.cookie.split("; ");
-
     cookies.forEach(cookie => {
       if (!cookie) return;
-
       const [name, ...valueParts] = cookie.split("=");
       const value = decodeURIComponent(valueParts.join("="));
-
       const row = document.createElement("tr");
-
       row.innerHTML = `
         <td>${name}</td>
         <td><input type="text" id="edit-${name}" value="${value}"></td>
@@ -182,7 +169,6 @@
           <button class="danger" onclick="deleteCookie('${name}')">Delete</button>
         </td>
       `;
-
       table.appendChild(row);
     });
   }
@@ -200,11 +186,8 @@
 
   loadCookies();
 
-  // -------------------------
-  // LOGOUT (remove admin cookie)
-  // -------------------------
   document.getElementById("logoutBtn").addEventListener("click", () => {
-    document.cookie = "admin=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    localStorage.removeItem("admin");
     location.href = "launch-deck.html";
   });
 
