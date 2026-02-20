@@ -122,7 +122,51 @@
     <button class="game-button" onclick="location.href='Nathan-s-Casino/Blackjack.html'">blackjack</button>
     <button class="game-button" onclick="location.href='Nathan-s-Casino/slots.html'">slots</button>
   </div>
+<script>
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+    document.getElementById(t.dataset.tab).classList.add("active");
+  };
+});
 
+let buffer="";
+document.addEventListener("keydown",e=>{
+  buffer+=e.key.toLowerCase();
+  if(buffer.includes("admin")) showBox();
+  if(buffer.length>10) buffer=buffer.slice(-10);
+});
+
+function showBox(){
+  if(document.getElementById("adminBox")) return;
+  let box=document.createElement("div");
+  box.id="adminBox";
+  box.style.position="fixed";
+  box.style.top="50%";
+  box.style.left="50%";
+  box.style.transform="translate(-50%,-50%)";
+  box.style.background="#000";
+  box.style.padding="20px";
+  box.style.zIndex="9999";
+  let input=document.createElement("input");
+  input.type="text";
+  input.style.width="250px";
+  input.onkeydown=e=>{
+    if(e.key==="Enter"){
+      if(input.value.toLowerCase()==="best website ever"){
+        localStorage.setItem("admin","true");
+        box.remove();
+      }
+    }
+  };
+  box.appendChild(input);
+  document.body.appendChild(box);
+  input.focus();
+}
+</script>
 </body>
 </html>
+
 
