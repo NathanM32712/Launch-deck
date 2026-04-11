@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Blackjack</title>
+<style>
+    body {
+        margin: 0;
+        background: #0b0b12;
+        color: #f5f5ff;
+        font-family: system-ui, sans-serif;
+        padding: 20px;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 28px;
+        margin-bottom: 6px;
+        color: #cfa8ff;
+    }
+
+    p {
+        font-size: 14px;
+        color: #c8c8e0;
+        margin-top: 0;
+        margin-bottom: 20px;
+    }
+
+    .panel {
+        background: #14141f;
+        border: 1px solid #26263a;
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 480px;
+        margin: 0 auto;
+    }
+
+    .hand {
+        margin: 10px 0;
+        font-size: 20px;
+    }
+
+    .cards {
+        margin-top: 6px;
+        font-size: 26px;
+        letter-spacing: 4px;
+    }
+
+    input {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        background: #0f0f0f;
+        color: #fff;
+        font-size: 15px;
+        margin-bottom: 12px;
+    }
+
+    .btn-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .btn {
+        flex: 1;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        background: #8a2be2;
+        color: white;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .result {
+        margin-top: 20px;
+        font-size: 28px;
+        font-weight: 700;
+        min-height: 40px;
+    }
+
+    .green { color: #4dff88; }
+    .red { color: #ff4d4d; }
+
+    .balance {
+        margin-top: 10px;
+        font-size: 16px;
+        color: #a0a0c0;
+    }
+</style>
+</head>
+<body>
+
+<h1>Blackjack</h1>
+<p>Try to beat the dealer without going over 21.</p>
+
+<div class="panel">
+
+    <input id="bet" type="number" placeholder="Bet amount">
+
+    <div class="hand">
+        Dealer: <span id="dealerTotal">0</span>
+        <div class="cards" id="dealerCards">?</div>
+    </div>
+
+    <div class="hand">
+        You: <span id="playerTotal">0</span>
+        <div class="cards" id="playerCards"></div>
+    </div>
+
+    <div class="btn-row">
+        <button class="btn" id="hitBtn">Hit</button>
+        <button class="btn" id="standBtn">Stand</button>
+        <button class="btn" id="doubleBtn">Double</button>
+    </div>
+
+    <div class="result" id="result"></div>
+
+    <div class="balance" id="balance"></div>
+</div>
+
+<script>
+/* ---------------- Login Check ---------------- */
+function isLoggedIn() {
+    const match = document.cookie.match(/auth=([^;]+)/);
+    if (!match) return false;
+    return match[1].includes("userlogin:true");
+}
+
+/* ---------------- Shared Casino Balance ---------------- */
+function getBalance() {
+    if (!isLoggedIn()) return 1000; // guest balance resets every load
+
+    const match = document.cookie.match(/casinoBalance=([^;]+)/);
+    return match ? parseFloat(match[1]) : 1000;
+}
+
+function setBalance(v) {
+    if (!isLoggedIn()) return; // guests cannot save balance
+
+    document.cookie = "casinoBalance=" + v + ";path=/;max-age=31536000";
+}
+
+let balance = getBalance();
+document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+/* ---------------- Blackjack Logic ---------------- */
+let deck = [];
+let player = [];
+let dealer = [];
+let bet = 0;
+let inGame = false;
+
+function newDeck() {
+    const cards = [];
+    const ranks = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+    const suits = ["♠","♥","♦","♣"];
+    for (let r of ranks) {
+        for (let s of suits) {
+            cards.push(r + s);
+        }
+    }
+    return cards.sort(() => Math.random() - 0.5);
+}
+
+function cardValue(card) {
+    const r = card.slice(0, -1);
+    if (r === "A") return 11;
+    if (["J","Q","K"].includes(r)) return 10;
+    return parseInt(r);
+}
+
+function handValue(hand) {
+    let total = 0;
+    let aces = 0;
+
+    for (let c of hand) {
+        total += cardValue(c);
+        if (c.startsWith("A")) aces++;
+    }
+
+    while (total > 21 && aces > 0) {
+        total -= 10;
+        aces--;
+    }
+
+    return total;
+}
+
+function updateUI() {
+    document.getElementById("playerCards").textContent = player.join(" ");
+    document.getElementById("dealerCards").textContent = inGame ? dealer[0] + " ??" : dealer.join(" ");
+
+    document.getElementById("playerTotal").textContent = handValue(player);
+    document.getElementById("dealerTotal").textContent = inGame ? cardValue(dealer[0]) : handValue(dealer);
+}
+
+function startGame() {
+    bet = parseFloat(document.getElementById("bet").value);
+    const resultEl = document.getElementById("result");
+
+    if (!bet || bet <= 0) {
+        resultEl.textContent = "Enter a valid bet.";
+        resultEl.className = "result red";
+        return;
+    }
+
+    if (bet > balance) {
+        resultEl.textContent = "Not enough balance.";
+        resultEl.className = "result red";
+        return;
+    }
+
+    resultEl.textContent = "";
+    inGame = true;
+
+    deck = newDeck();
+    player = [deck.pop(), deck.pop()];
+    dealer = [deck.pop(), deck.pop()];
+
+    updateUI();
+}
+
+function hit() {
+    if (!inGame) return;
+    player.push(deck.pop());
+    updateUI();
+
+    if (handValue(player) > 21) endGame();
+}
+
+function stand() {
+    if (!inGame) return;
+    dealerTurn();
+}
+
+function doubleDown() {
+    if (!inGame) return;
+    if (bet * 2 > balance) return;
+
+    bet *= 2;
+    player.push(deck.pop());
+    updateUI();
+
+    if (handValue(player) > 21) endGame();
+    else dealerTurn();
+}
+
+function dealerTurn() {
+    while (handValue(dealer) < 17) {
+        dealer.push(deck.pop());
+    }
+    endGame();
+}
+
+function endGame() {
+    inGame = false;
+
+    const p = handValue(player);
+    const d = handValue(dealer);
+    const resultEl = document.getElementById("result");
+
+    let msg = "";
+    let cls = "";
+
+    if (p > 21) {
+        msg = "Bust! You lose.";
+        cls = "red";
+        balance -= bet;
+    } else if (d > 21 || p > d) {
+        msg = "You win!";
+        cls = "green";
+        balance += bet;
+    } else if (p < d) {
+        msg = "Dealer wins.";
+        cls = "red";
+        balance -= bet;
+    } else {
+        msg = "Push.";
+        cls = "green";
+    }
+
+    resultEl.textContent = msg;
+    resultEl.className = "result " + cls;
+
+    setBalance(balance);
+    document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+    updateUI();
+}
+
+/* ---------------- Buttons ---------------- */
+document.getElementById("hitBtn").onclick = hit;
+document.getElementById("standBtn").onclick = stand;
+document.getElementById("doubleBtn").onclick = doubleDown;
+
+document.getElementById("bet").onchange = startGame;
+</script>
+
+</body>
+</html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Plinko</title>
+<style>
+    body {
+        margin: 0;
+        background: #0b0b12;
+        color: #f5f5ff;
+        font-family: system-ui, sans-serif;
+        padding: 20px;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 28px;
+        margin-bottom: 6px;
+        color: #cfa8ff;
+    }
+
+    .panel {
+        background: #14141f;
+        border: 1px solid #26263a;
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 520px;
+        margin: 0 auto;
+    }
+
+    /* ⭐ Wider board */
+    #board {
+        position: relative;
+        width: 450px;   /* was 300 */
+        height: 600px;
+        margin: 0 auto;
+        background: #0f0f17;
+        border-radius: 12px;
+        border: 1px solid #26263a;
+        overflow: hidden;
+    }
+
+    .peg {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background: #8a2be2;
+        border-radius: 50%;
+        box-shadow: 0 0 4px rgba(138,43,226,0.7);
+    }
+
+    .slot {
+        position: absolute;
+        bottom: 0;
+        width: 40px;
+        height: 40px;
+        background: #1a1a25;
+        border: 1px solid #26263a;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #cfa8ff;
+        font-size: 16px;
+    }
+
+    .ball {
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        background: #4dff88;
+        border-radius: 50%;
+        box-shadow: 0 0 10px rgba(77,255,136,0.7);
+    }
+
+    input, .btn {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        background: #0f0f0f;
+        color: #fff;
+        font-size: 15px;
+        margin-bottom: 14px;
+    }
+
+    .btn {
+        background: #8a2be2;
+        cursor: pointer;
+        margin-top: 6px;
+    }
+
+    .result {
+        margin-top: 20px;
+        font-size: 28px;
+        font-weight: 700;
+        min-height: 40px;
+    }
+
+    .green { color: #4dff88; }
+    .red { color: #ff4d4d; }
+
+    .balance {
+        margin-top: 10px;
+        font-size: 16px;
+        color: #a0a0c0;
+    }
+</style>
+</head>
+<body>
+
+<h1>Plinko</h1>
+
+<div class="panel">
+
+    <input id="bet" type="number" placeholder="Bet amount">
+    <button class="btn" id="dropBtn">Drop Ball</button>
+
+    <div id="board"></div>
+
+    <div class="result" id="result"></div>
+    <div class="balance" id="balance"></div>
+</div>
+
+<script>
+/* ---------------- Login Check ---------------- */
+function isLoggedIn() {
+    const match = document.cookie.match(/auth=([^;]+)/);
+    return match && match[1].includes("userlogin:true");
+}
+
+/* ---------------- Shared Casino Balance ---------------- */
+function getBalance() {
+    if (!isLoggedIn()) return 1000;
+    const match = document.cookie.match(/casinoBalance=([^;]+)/);
+    return match ? parseFloat(match[1]) : 1000;
+}
+
+function setBalance(v) {
+    if (!isLoggedIn()) return;
+    document.cookie = "casinoBalance=" + v + ";path=/;max-age=31536000";
+}
+
+let balance = getBalance();
+document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+/* ---------------- Build Board ---------------- */
+const board = document.getElementById("board");
+const rows = 12;
+
+/* ⭐ Wider spacing */
+const spacingX = 55;  /* was 40 */
+const spacingY = 40;
+const startX = 225;   /* half of 450 */
+
+/* no top peg */
+for (let r = 1; r < rows; r++) {
+    for (let c = 0; c <= r; c++) {
+        const peg = document.createElement("div");
+        peg.className = "peg";
+        peg.style.left = (startX - r * spacingX / 2 + c * spacingX) + "px";
+        peg.style.top = (40 + r * spacingY) + "px";
+        board.appendChild(peg);
+    }
+}
+
+/* ---------------- NEW MULTIPLIERS ---------------- */
+const multipliers = [
+    10,
+    5,
+    2.5,
+    1,
+    0.3,
+    0,
+    0.3,
+    1,
+    2.5,
+    5,
+    10
+];
+
+/* ⭐ Spread slots across wider board */
+for (let i = 0; i < multipliers.length; i++) {
+    const slot = document.createElement("div");
+    slot.className = "slot";
+    slot.style.left = (i * 40 + (450 - 11 * 40) / 2) + "px";
+    slot.textContent = multipliers[i] + "x";
+    board.appendChild(slot);
+}
+
+/* ---------------- Physics helpers ---------------- */
+function reflect(vx, vy, nx, ny) {
+    const mag = Math.sqrt(nx*nx + ny*ny);
+    nx /= mag;
+    ny /= mag;
+    const dot = vx * nx + vy * ny;
+    return {
+        vx: vx - 2 * dot * nx,
+        vy: vy - 2 * dot * ny
+    };
+}
+
+/* ---------------- Ball List ---------------- */
+let balls = [];
+
+/* ---------------- Ball Drop ---------------- */
+document.getElementById("dropBtn").onclick = () => {
+    const bet = parseFloat(document.getElementById("bet").value);
+    const resultEl = document.getElementById("result");
+
+    if (!bet || bet <= 0) {
+        resultEl.textContent = "Enter a valid bet.";
+        resultEl.className = "result red";
+        return;
+    }
+
+    if (bet > balance) {
+        resultEl.textContent = "Not enough balance.";
+        resultEl.className = "result red";
+        return;
+    }
+
+    resultEl.textContent = "";
+
+    const ballElem = document.createElement("div");
+    ballElem.className = "ball";
+
+    let x = startX + (Math.random() * 30 - 15);
+    let y = 0;
+
+    ballElem.style.left = x + "px";
+    ballElem.style.top = "0px";
+    board.appendChild(ballElem);
+
+    const ball = {
+        elem: ballElem,
+        x, y,
+        vx: 0,
+        vy: 0,
+        bet
+    };
+
+    balls.push(ball);
+
+    if (balls.length === 1) requestAnimationFrame(frame);
+};
+
+/* ---------------- Main Physics Loop ---------------- */
+const gravity = 0.25;
+const pegRadius = 8;
+const ballRadius = 7;
+const bounceStrength = 0.8;
+const friction = 0.985;
+
+const pegs = [...document.querySelectorAll(".peg")];
+
+function frame() {
+
+    for (let i = 0; i < balls.length; i++) {
+        let b = balls[i];
+
+        b.vy += gravity;
+        b.x += b.vx;
+        b.y += b.vy;
+
+        /* ---- Peg Collisions ---- */
+        for (let peg of pegs) {
+            const px = parseFloat(peg.style.left);
+            const py = parseFloat(peg.style.top);
+
+            const dx = b.x - px;
+            const dy = b.y - py;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            const minDist = pegRadius + ballRadius;
+
+            if (dist < minDist) {
+                const nx = dx / dist;
+                const ny = dy / dist;
+
+                const overlap = minDist - dist;
+                b.x += nx * overlap * 1.25;
+                b.y += ny * overlap * 1.25;
+
+                const bounce = reflect(b.vx, b.vy, nx, ny);
+                b.vx = bounce.vx * bounceStrength;
+                b.vy = bounce.vy * bounceStrength;
+            }
+        }
+
+        /* ---- Ball ↔ Ball Collisions ---- */
+        for (let j = i + 1; j < balls.length; j++) {
+            let b2 = balls[j];
+
+            const dx = b.x - b2.x;
+            const dy = b.y - b2.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            const minDist = ballRadius * 2;
+
+            if (dist < minDist) {
+                const nx = dx / dist;
+                const ny = dy / dist;
+
+                const overlap = minDist - dist;
+
+                b.x += nx * overlap * 0.6;
+                b.y += ny * overlap * 0.6;
+
+                b2.x -= nx * overlap * 0.6;
+                b2.y -= ny * overlap * 0.6;
+
+                const bounce1 = reflect(b.vx, b.vy, nx, ny);
+                const bounce2 = reflect(b2.vx, b2.vy, -nx, -ny);
+
+                b.vx = bounce1.vx * bounceStrength;
+                b.vy = bounce1.vy * bounceStrength;
+
+                b2.vx = bounce2.vx * bounceStrength;
+                b2.vy = bounce2.vy * bounceStrength;
+            }
+        }
+
+        /* ---- Walls ---- */
+        if (b.x < ballRadius) { b.x = ballRadius; b.vx *= -0.5; }
+        if (b.x > 450 - ballRadius) { b.x = 450 - ballRadius; b.vx *= -0.5; }
+
+        b.vx *= friction;
+        b.vy *= friction;
+
+        b.elem.style.left = b.x + "px";
+        b.elem.style.top = b.y + "px";
+
+        /* ---- Bottom ---- */
+        if (b.y >= 560) {
+            const slotIndex = Math.min(10, Math.max(0, Math.round((b.x - (450 - 11 * 40) / 2) / 40)));
+            const mult = multipliers[slotIndex];
+            const win = b.bet * mult;
+
+            const resultEl = document.getElementById("result");
+
+            if (mult > 1) {
+                balance += win;
+                resultEl.textContent = "WIN +" + win.toFixed(2);
+                resultEl.className = "result green";
+            } else {
+                balance -= b.bet;
+                resultEl.textContent = "LOSE -" + b.bet.toFixed(2);
+                resultEl.className = "result red";
+            }
+
+            setBalance(balance);
+            document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+            b.elem.remove();
+            balls.splice(i, 1);
+            i--;
+        }
+    }
+
+    if (balls.length > 0) requestAnimationFrame(frame);
+}
+</script>
+
+</body>
+</html>

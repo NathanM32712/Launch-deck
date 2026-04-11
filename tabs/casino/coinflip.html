@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Coinflip</title>
+<style>
+    body {
+        margin: 0;
+        background: #0b0b12;
+        color: #f5f5ff;
+        font-family: system-ui, sans-serif;
+        padding: 20px;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 32px;
+        margin-bottom: 10px;
+        color: #cfa8ff;
+    }
+
+    .panel {
+        background: #14141f;
+        border: 1px solid #26263a;
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 480px;
+        margin: 0 auto;
+    }
+
+    #coin {
+        width: 150px;
+        height: 150px;
+        margin: 20px auto;
+        background: radial-gradient(circle, #8a2be2, #4b0082);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 48px;
+        color: #fff;
+        transition: transform 1s ease;
+    }
+
+    input, button {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        background: #0f0f0f;
+        color: #fff;
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    button {
+        background: #8a2be2;
+        cursor: pointer;
+    }
+
+    .btnRow {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btnRow button {
+        flex: 1;
+    }
+
+    #result {
+        margin-top: 20px;
+        font-size: 28px;
+        font-weight: 700;
+    }
+
+    .green { color: #4dff88; }
+    .red { color: #ff4d4d; }
+
+    #balance {
+        margin-top: 10px;
+        font-size: 18px;
+        color: #a0a0c0;
+    }
+</style>
+</head>
+<body>
+
+<h1>Coinflip</h1>
+
+<div class="panel">
+
+    <input id="bet" type="number" placeholder="Bet amount">
+
+    <div class="btnRow">
+        <button id="headsBtn">Heads</button>
+        <button id="tailsBtn">Tails</button>
+    </div>
+
+    <div id="coin">?</div>
+
+    <div id="result"></div>
+    <div id="balance"></div>
+</div>
+
+<script>
+/* ---------------- Login Check ---------------- */
+function isLoggedIn() {
+    const match = document.cookie.match(/auth=([^;]+)/);
+    return match && match[1].includes("userlogin:true");
+}
+
+/* ---------------- Shared Casino Balance ---------------- */
+function getBalance() {
+    if (!isLoggedIn()) return 1000;
+    const match = document.cookie.match(/casinoBalance=([^;]+)/);
+    return match ? parseFloat(match[1]) : 1000;
+}
+
+function setBalance(v) {
+    if (!isLoggedIn()) return;
+    document.cookie = "casinoBalance=" + v + ";path=/;max-age=31536000";
+}
+
+let balance = getBalance();
+document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+/* ---------------- Coinflip Logic ---------------- */
+const coinEl = document.getElementById("coin");
+const resultEl = document.getElementById("result");
+
+function flip(choice) {
+    const bet = parseFloat(document.getElementById("bet").value);
+
+    if (!bet || bet <= 0) {
+        resultEl.textContent = "Enter a valid bet.";
+        resultEl.className = "red";
+        return;
+    }
+
+    if (bet > balance) {
+        resultEl.textContent = "Not enough balance.";
+        resultEl.className = "red";
+        return;
+    }
+
+    balance -= bet;
+    setBalance(balance);
+    document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+    // Flip animation
+    coinEl.style.transform = "rotateY(720deg)";
+    coinEl.textContent = "?";
+
+    setTimeout(() => {
+        const outcome = Math.random() < 0.5 ? "Heads" : "Tails";
+        coinEl.style.transform = "rotateY(0deg)";
+        coinEl.textContent = outcome === "Heads" ? "H" : "T";
+
+        if (outcome === choice) {
+            const win = bet * 2;
+            balance += win;
+            resultEl.textContent = "WIN +" + win.toFixed(2);
+            resultEl.className = "green";
+        } else {
+            resultEl.textContent = "LOSE -" + bet.toFixed(2);
+            resultEl.className = "red";
+        }
+
+        setBalance(balance);
+        document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+    }, 1000);
+}
+
+document.getElementById("headsBtn").onclick = () => flip("Heads");
+document.getElementById("tailsBtn").onclick = () => flip("Tails");
+</script>
+
+</body>
+</html>

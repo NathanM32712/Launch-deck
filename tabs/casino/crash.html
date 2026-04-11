@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Crash</title>
+<style>
+    body {
+        margin: 0;
+        background: #0b0b12;
+        color: #f5f5ff;
+        font-family: system-ui, sans-serif;
+        padding: 20px;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 32px;
+        margin-bottom: 10px;
+        color: #cfa8ff;
+    }
+
+    .panel {
+        background: #14141f;
+        border: 1px solid #26263a;
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 480px;
+        margin: 0 auto;
+    }
+
+    input, button {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        background: #0f0f0f;
+        color: #fff;
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    button {
+        background: #8a2be2;
+        cursor: pointer;
+    }
+
+    #multiplier {
+        font-size: 48px;
+        margin-top: 20px;
+        font-weight: 700;
+        color: #4dff88;
+    }
+
+    #crashed {
+        font-size: 48px;
+        margin-top: 20px;
+        font-weight: 700;
+        color: #ff4d4d;
+        display: none;
+    }
+
+    #balance {
+        margin-top: 10px;
+        font-size: 18px;
+        color: #a0a0c0;
+    }
+</style>
+</head>
+<body>
+
+<h1>Crash</h1>
+
+<div class="panel">
+
+    <input id="bet" type="number" placeholder="Bet amount">
+    <button id="startBtn">Start Round</button>
+    <button id="cashoutBtn" disabled>Cash Out</button>
+
+    <div id="multiplier">1.00x</div>
+    <div id="crashed">CRASHED!</div>
+
+    <div id="balance"></div>
+</div>
+
+<script>
+/* ---------------- Login Check ---------------- */
+function isLoggedIn() {
+    const match = document.cookie.match(/auth=([^;]+)/);
+    return match && match[1].includes("userlogin:true");
+}
+
+/* ---------------- Shared Casino Balance ---------------- */
+function getBalance() {
+    if (!isLoggedIn()) return 1000;
+    const match = document.cookie.match(/casinoBalance=([^;]+)/);
+    return match ? parseFloat(match[1]) : 1000;
+}
+
+function setBalance(v) {
+    if (!isLoggedIn()) return;
+    document.cookie = "casinoBalance=" + v + ";path=/;max-age=31536000";
+}
+
+let balance = getBalance();
+document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+/* ---------------- Crash Logic ---------------- */
+let multiplier = 1.00;
+let crashed = false;
+let crashPoint = 0;
+let interval = null;
+let betAmount = 0;
+let cashedOut = false;
+
+function randomCrashPoint() {
+    // Fair exponential distribution
+    return (1 / Math.random()) * 0.8 + 0.5;
+}
+
+document.getElementById("startBtn").onclick = () => {
+    betAmount = parseFloat(document.getElementById("bet").value);
+
+    if (!betAmount || betAmount <= 0) return;
+    if (betAmount > balance) return;
+
+    balance -= betAmount;
+    setBalance(balance);
+    document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+    multiplier = 1.00;
+    crashed = false;
+    cashedOut = false;
+
+    crashPoint = randomCrashPoint();
+
+    document.getElementById("multiplier").style.display = "block";
+    document.getElementById("crashed").style.display = "none";
+
+    document.getElementById("cashoutBtn").disabled = false;
+    document.getElementById("startBtn").disabled = true;
+
+    interval = setInterval(() => {
+        if (crashed) return;
+
+        multiplier += multiplier * 0.015;
+        document.getElementById("multiplier").textContent = multiplier.toFixed(2) + "x";
+
+        if (multiplier >= crashPoint) {
+            crashed = true;
+            clearInterval(interval);
+
+            document.getElementById("multiplier").style.display = "none";
+            document.getElementById("crashed").style.display = "block";
+
+            document.getElementById("cashoutBtn").disabled = true;
+            document.getElementById("startBtn").disabled = false;
+        }
+    }, 50);
+};
+
+document.getElementById("cashoutBtn").onclick = () => {
+    if (crashed || cashedOut) return;
+
+    cashedOut = true;
+
+    const win = betAmount * multiplier;
+
+    balance += win;
+    setBalance(balance);
+    document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+    // ⭐ STOP THE ROUND COMPLETELY
+    clearInterval(interval);
+
+    // Freeze multiplier visually
+    document.getElementById("multiplier").textContent = multiplier.toFixed(2) + "x";
+
+    // Disable cashout, re-enable start
+    document.getElementById("cashoutBtn").disabled = true;
+    document.getElementById("startBtn").disabled = false;
+
+    // Prevent crash from triggering
+    crashed = true;
+};
+</script>
+
+</body>
+</html>

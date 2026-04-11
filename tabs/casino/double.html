@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Double</title>
+<style>
+    body {
+        margin: 0;
+        background: #0b0b12;
+        color: #f5f5ff;
+        font-family: system-ui, sans-serif;
+        padding: 20px;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 32px;
+        margin-bottom: 10px;
+        color: #cfa8ff;
+    }
+
+    .panel {
+        background: #14141f;
+        border: 1px solid #26263a;
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 480px;
+        margin: 0 auto;
+    }
+
+    #wheelContainer {
+        width: 300px;
+        height: 300px;
+        margin: 20px auto;
+        position: relative;
+    }
+
+    #pointer {
+        width: 0;
+        height: 0;
+        border-left: 15px solid transparent;
+        border-right: 15px solid transparent;
+        border-bottom: 25px solid #fff;
+        position: absolute;
+        top: -5px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    #wheel {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        transition: transform 4s cubic-bezier(.17,.67,.16,1);
+    }
+
+    input, button {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        background: #0f0f0f;
+        color: #fff;
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    button {
+        background: #8a2be2;
+        cursor: pointer;
+    }
+
+    .btnRow {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btnRow button {
+        flex: 1;
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    #result {
+        margin-top: 20px;
+        font-size: 28px;
+        font-weight: 700;
+    }
+
+    .green { color: #4dff88; }
+    .red { color: #ff4d4d; }
+
+    #balance {
+        margin-top: 10px;
+        font-size: 18px;
+        color: #a0a0c0;
+    }
+</style>
+</head>
+<body>
+
+<h1>Double</h1>
+
+<div class="panel">
+
+    <input id="bet" type="number" placeholder="Bet amount">
+
+    <div class="btnRow">
+        <button id="redBtn" style="background:#ff4d4d;">Red</button>
+        <button id="blackBtn" style="background:#333;">Black</button>
+        <button id="greenBtn" style="background:#4dff88; color:#000;">Green</button>
+    </div>
+
+    <div id="wheelContainer">
+        <div id="pointer"></div>
+        <canvas id="wheel" width="300" height="300"></canvas>
+    </div>
+
+    <div id="result"></div>
+    <div id="balance"></div>
+</div>
+
+<script>
+/* ---------------- Login Check ---------------- */
+function isLoggedIn() {
+    const match = document.cookie.match(/auth=([^;]+)/);
+    return match && match[1].includes("userlogin:true");
+}
+
+/* ---------------- Shared Casino Balance ---------------- */
+function getBalance() {
+    if (!isLoggedIn()) return 1000;
+    const match = document.cookie.match(/casinoBalance=([^;]+)/);
+    return match ? parseFloat(match[1]) : 1000;
+}
+
+function setBalance(v) {
+    if (!isLoggedIn()) return;
+    document.cookie = "casinoBalance=" + v + ";path=/;max-age=31536000";
+}
+
+let balance = getBalance();
+document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+/* ---------------- Wheel Setup ---------------- */
+const wheel = document.getElementById("wheel");
+const ctx = wheel.getContext("2d");
+
+const segments = [
+    "red","black","red","black","red","black","red","black",
+    "green", // jackpot
+    "red","black","red","black","red","black","red","black"
+];
+
+const colors = {
+    red: "#ff4d4d",
+    black: "#333",
+    green: "#4dff88"
+};
+
+const slice = (2 * Math.PI) / segments.length;
+
+function drawWheel() {
+    for (let i = 0; i < segments.length; i++) {
+        ctx.beginPath();
+        ctx.fillStyle = colors[segments[i]];
+        ctx.moveTo(150, 150);
+        ctx.arc(150, 150, 150, i * slice, (i + 1) * slice);
+        ctx.fill();
+    }
+}
+drawWheel();
+
+/* ---------------- Spin Logic ---------------- */
+let currentRotation = 0;
+
+function spin(choice) {
+    const bet = parseFloat(document.getElementById("bet").value);
+    const resultEl = document.getElementById("result");
+
+    if (!bet || bet <= 0) {
+        resultEl.textContent = "Enter a valid bet.";
+        resultEl.className = "red";
+        return;
+    }
+
+    if (bet > balance) {
+        resultEl.textContent = "Not enough balance.";
+        resultEl.className = "red";
+        return;
+    }
+
+    balance -= bet;
+    setBalance(balance);
+    document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+    const spinAmount = 360 * 6;
+    const landingIndex = Math.floor(Math.random() * segments.length);
+    const landingAngle = landingIndex * (360 / segments.length);
+
+    const finalRotation = spinAmount + (360 - landingAngle);
+    currentRotation = finalRotation;
+
+    wheel.style.transform = `rotate(${finalRotation}deg)`;
+
+    setTimeout(() => {
+        const landed = segments[landingIndex];
+
+        let mult = 0;
+        if (landed === "red" && choice === "red") mult = 2;
+        if (landed === "black" && choice === "black") mult = 2;
+        if (landed === "green" && choice === "green") mult = 14;
+
+        if (mult > 0) {
+            const win = bet * mult;
+            balance += win;
+            resultEl.textContent = `WIN +${win.toFixed(2)} (${landed})`;
+            resultEl.className = "green";
+        } else {
+            resultEl.textContent = `LOSE (${landed})`;
+            resultEl.className = "red";
+        }
+
+        setBalance(balance);
+        document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+    }, 4200);
+}
+
+document.getElementById("redBtn").onclick = () => spin("red");
+document.getElementById("blackBtn").onclick = () => spin("black");
+document.getElementById("greenBtn").onclick = () => spin("green");
+</script>
+
+</body>
+</html>

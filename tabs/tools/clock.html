@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Launchdeck-clock tab</title>
+<link rel="icon" type="image/png" href="../icon.png">
+<style>
+  :root {
+    --bg: #05060a;
+    --panel: #10121a;
+    --accent: #4fd1c5;
+    --accent-soft: #2c7a7b;
+    --text-main: #f7fafc;
+    --text-muted: #a0aec0;
+    --danger: #f56565;
+    --font-mono: "SF Mono", Menlo, Consolas, monospace;
+    --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at top, #1a202c 0, #05060a 55%);
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .app {
+    width: 960px;
+    max-width: 100%;
+    padding: 24px 28px;
+    background: linear-gradient(145deg, #05060a 0, #0b0d14 40%, #05060a 100%);
+    border-radius: 18px;
+    box-shadow:
+      0 24px 60px rgba(0,0,0,0.75),
+      0 0 0 1px rgba(255,255,255,0.03);
+  }
+  .app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 18px;
+  }
+  .title {
+    font-size: 22px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 2fr 2fr 1.6fr;
+    gap: 18px;
+  }
+  .card {
+    background: radial-gradient(circle at top left, #151826 0, #05060a 70%);
+    border-radius: 14px;
+    padding: 16px 18px 18px;
+    border: 1px solid rgba(255,255,255,0.04);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  }
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .card-title {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--text-muted);
+  }
+  .card-note {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .clock-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .clock-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-muted);
+  }
+  .clock-value {
+    font-family: var(--font-mono);
+    font-size: 24px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: linear-gradient(120deg, #05060a 0, #151826 100%);
+    border: 1px solid rgba(79,209,197,0.25);
+    color: var(--accent);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .clock-value span {
+    flex: 1;
+  }
+  .clock-tag {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 2px 6px;
+    border-radius: 999px;
+    border: 1px solid rgba(79,209,197,0.4);
+    color: var(--accent);
+  }
+  .clock-value.muted {
+    border-color: rgba(255,255,255,0.06);
+    color: var(--text-muted);
+  }
+  .clock-value.danger {
+    border-color: rgba(245,101,101,0.6);
+    color: var(--danger);
+  }
+  textarea {
+    width: 100%;
+    min-height: 130px;
+    resize: vertical;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: #05060a;
+    color: var(--text-main);
+    padding: 10px 11px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.4;
+    outline: none;
+  }
+  textarea::placeholder {
+    color: #4a5568;
+  }
+  .help-text {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    margin-bottom: 4px;
+  }
+  button {
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: #111827;
+    color: var(--text-main);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    padding: 7px 12px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.05s, box-shadow 0.15s, border-color 0.15s;
+  }
+  button.primary {
+    background: linear-gradient(135deg, var(--accent-soft), var(--accent));
+    border-color: rgba(79,209,197,0.8);
+    color: #020617;
+    box-shadow: 0 0 18px rgba(79,209,197,0.45);
+  }
+  button.danger {
+    background: linear-gradient(135deg, #742a2a, #f56565);
+    border-color: rgba(245,101,101,0.8);
+    color: #1a202c;
+  }
+  button:active {
+    transform: translateY(1px);
+    box-shadow: none;
+  }
+  .badge {
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  .badge strong {
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .stopwatch-time {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: linear-gradient(120deg, #05060a 0, #151826 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .stopwatch-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .stopwatch-buttons button {
+    flex: 1;
+  }
+  .analog-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .analog-row {
+    display: flex;
+    gap: 10px;
+  }
+  canvas {
+    background: radial-gradient(circle at top, #111827 0, #020617 70%);
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .digital-small {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .digital-small-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--text-muted);
+  }
+  .digital-small-value {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    padding: 6px 8px;
+    border-radius: 10px;
+    background: linear-gradient(120deg, #05060a 0, #151826 100%);
+    border: 1px solid rgba(79,209,197,0.25);
+    color: var(--accent);
+  }
+  .status-line {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .status-line strong {
+    color: var(--accent);
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+<a href="Launch-Deck" class="corner-icon"></a>
+<div class="app">
+  <div class="app-header">
+    <div>
+      <div class="title">Launchdeck</div>
+      <div class="subtitle">Tiny always-on-top brain for time blocks.</div>
+    </div>
+    <div class="subtitle" id="statusText"></div>
+  </div>
+
+  <div class="grid">
+    <!-- CLOCK + SCHEDULE SUMMARY -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Clock</div>
+        <div class="card-note" id="scheduleSummary">No schedule loaded</div>
+      </div>
+      <div class="clock-row">
+        <div>
+          <div class="clock-label">Current</div>
+          <div class="clock-value" id="currentTime">
+            <span>--:--:--</span>
+            <span class="clock-tag">Now</span>
+          </div>
+        </div>
+        <div>
+          <div class="clock-label">Current Time Left</div>
+          <div class="clock-value muted" id="timeLeft">
+            <span>--:--:--</span>
+            <span class="clock-tag">Block</span>
+          </div>
+        </div>
+        <div>
+          <div class="clock-label">End</div>
+          <div class="clock-value muted" id="endTime">
+            <span>--:--:--</span>
+            <span class="clock-tag">Until</span>
+          </div>
+        </div>
+      </div>
+      <div class="status-line" id="blockStatus" style="margin-top:10px;">
+        No active block. Next block: <strong>—</strong>
+      </div>
+    </div>
+
+    <!-- SCHEDULE EDITOR -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Schedule</div>
+        <div class="card-note">Saved in localStorage</div>
+      </div>
+      <textarea id="scheduleInput" placeholder="08:00/08:58
+09:00/09:25
+13:00/13:50"></textarea>
+      <div class="help-text">
+        Format: <code>HH:MM/HH:MM</code>, one per line. 24‑hour clock. Lines are sorted automatically.
+      </div>
+      <div class="btn-row">
+        <button class="primary" id="applyScheduleBtn">Apply Schedule</button>
+        <button id="resetScheduleBtn">Reset</button>
+      </div>
+      <div class="badge" id="scheduleError"></div>
+    </div>
+
+    <!-- STOPWATCH + ANALOG -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Stopwatch</div>
+        <div class="card-note">Persists in localStorage</div>
+      </div>
+      <div class="stopwatch-time" id="stopwatchDisplay">00:00:00</div>
+      <div class="stopwatch-buttons">
+        <button class="primary" id="startStopwatchBtn">Start</button>
+        <button id="pauseStopwatchBtn">Pause</button>
+        <button class="danger" id="resetStopwatchBtn">Reset</button>
+      </div>
+      <div class="badge" id="stopwatchStatus"></div>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:12px 0;">
+
+      <div class="card-header" style="margin-bottom:8px;">
+        <div class="card-title">Analog Clock</div>
+        <div class="card-note">Analog + digital, because why not</div>
+      </div>
+      <div class="analog-wrapper">
+        <div class="analog-row">
+          <canvas id="analogCanvas" width="120" height="120"></canvas>
+          <div class="digital-small">
+            <div>
+              <div class="digital-small-label">Digital</div>
+              <div class="digital-small-value" id="digitalSmall">--:--:--</div>
+            </div>
+            <div>
+              <div class="digital-small-label">Date</div>
+              <div class="digital-small-value" id="dateSmall">----</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function() {
+  // ---------- UTILITIES ----------
+  function pad(n) {
+    return n.toString().padStart(2, "0");
+  }
+
+  function formatTime(h, m, s) {
+    return pad(h) + ":" + pad(m) + ":" + pad(s);
+  }
+
+  function parseHM(str) {
+    const m = /^(\d{1,2}):(\d{2})$/.exec(str.trim());
+    if (!m) return null;
+    let h = parseInt(m[1], 10);
+    let min = parseInt(m[2], 10);
+    if (h < 0 || h > 23 || min < 0 || min > 59) return null;
+    return { h, m: min };
+  }
+
+  function toMinutes(h, m) {
+    return h * 60 + m;
+  }
+
+  function fromMinutes(total) {
+    const h = Math.floor(total / 60) % 24;
+    const m = total % 60;
+    return { h, m };
+  }
+
+  function secondsToHMS(sec) {
+    const s = Math.max(0, Math.floor(sec));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const r = s % 60;
+    return { h, m, s: r };
+  }
+
+  // ---------- DOM ----------
+  const currentTimeEl = document.getElementById("currentTime").querySelector("span");
+  const timeLeftEl = document.getElementById("timeLeft").querySelector("span");
+  const endTimeEl = document.getElementById("endTime").querySelector("span");
+  const timeLeftBox = document.getElementById("timeLeft");
+  const endTimeBox = document.getElementById("endTime");
+  const blockStatusEl = document.getElementById("blockStatus");
+  const scheduleSummaryEl = document.getElementById("scheduleSummary");
+  const statusTextEl = document.getElementById("statusText");
+
+  const scheduleInput = document.getElementById("scheduleInput");
+  const applyScheduleBtn = document.getElementById("applyScheduleBtn");
+  const resetScheduleBtn = document.getElementById("resetScheduleBtn");
+  const scheduleErrorEl = document.getElementById("scheduleError");
+
+  const stopwatchDisplay = document.getElementById("stopwatchDisplay");
+  const startStopwatchBtn = document.getElementById("startStopwatchBtn");
+  const pauseStopwatchBtn = document.getElementById("pauseStopwatchBtn");
+  const resetStopwatchBtn = document.getElementById("resetStopwatchBtn");
+  const stopwatchStatusEl = document.getElementById("stopwatchStatus");
+
+  const analogCanvas = document.getElementById("analogCanvas");
+  const ctx = analogCanvas.getContext("2d");
+  const digitalSmallEl = document.getElementById("digitalSmall");
+  const dateSmallEl = document.getElementById("dateSmall");
+
+  // ---------- SCHEDULE STATE ----------
+  let scheduleBlocks = []; // [{startMin, endMin}]
+  const schedule = "launchcheck_schedule_v1";
+
+  function loadSchedule() {
+    try {
+      const raw = localStorage.getItem(schedule);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return;
+      scheduleBlocks = parsed;
+      renderScheduleSummary();
+      scheduleInput.value = parsed
+        .map(b => {
+          const s = fromMinutes(b.startMin);
+          const e = fromMinutes(b.endMin);
+          return pad(s.h) + ":" + pad(s.m) + "/" + pad(e.h) + ":" + pad(e.m);
+        })
+        .join("\n");
+    } catch (e) {
+      console.warn("Failed to load schedule", e);
+    }
+  }
+
+  function saveSchedule() {
+    localStorage.setItem(schedule, JSON.stringify(scheduleBlocks));
+  }
+
+  function renderScheduleSummary() {
+    if (!scheduleBlocks.length) {
+      scheduleSummaryEl.textContent = "No schedule loaded";
+      return;
+    }
+    const first = scheduleBlocks[0];
+    const last = scheduleBlocks[scheduleBlocks.length - 1];
+    const fs = fromMinutes(first.startMin);
+    const le = fromMinutes(last.endMin);
+    scheduleSummaryEl.textContent =
+      "Blocks: " + scheduleBlocks.length +
+      " • " + pad(fs.h) + ":" + pad(fs.m) +
+      " → " + pad(le.h) + ":" + pad(le.m);
+  }
+
+  function applyScheduleFromText() {
+    const lines = scheduleInput.value.split("\n").map(l => l.trim()).filter(Boolean);
+    if (!lines.length) {
+      scheduleBlocks = [];
+      saveSchedule();
+      renderScheduleSummary();
+      scheduleErrorEl.textContent = "Cleared schedule.";
+      scheduleErrorEl.style.color = "var(--text-muted)";
+      return;
+    }
+    const blocks = [];
+    for (const line of lines) {
+      const parts = line.split("/");
+      if (parts.length !== 2) {
+        scheduleErrorEl.textContent = "Bad line: \"" + line + "\" (need start/end)";
+        scheduleErrorEl.style.color = "var(--danger)";
+        return;
+      }
+      const start = parseHM(parts[0]);
+      const end = parseHM(parts[1]);
+      if (!start || !end) {
+        scheduleErrorEl.textContent = "Bad time in line: \"" + line + "\"";
+        scheduleErrorEl.style.color = "var(--danger)";
+        return;
+      }
+      const startMin = toMinutes(start.h, start.m);
+      const endMin = toMinutes(end.h, end.m);
+      if (endMin <= startMin) {
+        scheduleErrorEl.textContent = "End must be after start in line: \"" + line + "\"";
+        scheduleErrorEl.style.color = "var(--danger)";
+        return;
+      }
+      blocks.push({ startMin, endMin });
+    }
+    blocks.sort((a, b) => a.startMin - b.startMin);
+    scheduleBlocks = blocks;
+    saveSchedule();
+    renderScheduleSummary();
+    scheduleErrorEl.textContent = "Schedule applied.";
+    scheduleErrorEl.style.color = "var(--accent)";
+  }
+
+  function resetSchedule() {
+    scheduleBlocks = [];
+    saveSchedule();
+    scheduleInput.value = "";
+    renderScheduleSummary();
+    scheduleErrorEl.textContent = "Schedule reset.";
+    scheduleErrorEl.style.color = "var(--text-muted)";
+  }
+
+  function findCurrentAndNextBlock(nowMin) {
+    let current = null;
+    let next = null;
+    for (const b of scheduleBlocks) {
+      if (nowMin >= b.startMin && nowMin < b.endMin) {
+        current = b;
+        break;
+      }
+      if (nowMin < b.startMin && !next) {
+        next = b;
+      }
+    }
+    if (!current && !next && scheduleBlocks.length) {
+      // after last block: no current, no next
+    }
+    return { current, next };
+  }
+
+  // ---------- STOPWATCH STATE ----------
+  const STOPWATCH_KEY = "launchcheck_stopwatch_v1";
+  let swRunning = false;
+  let swStartTimestamp = null; // ms
+  let swAccumulated = 0; // ms
+  let swInterval = null;
+
+  function loadStopwatch() {
+    try {
+      const raw = localStorage.getItem(STOPWATCH_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      swRunning = !!data.running;
+      swStartTimestamp = data.startTimestamp || null;
+      swAccumulated = data.accumulated || 0;
+
+      if (swRunning && swStartTimestamp) {
+        // adjust accumulated to now
+        const now = Date.now();
+        const delta = now - swStartTimestamp;
+        if (delta > 0) {
+          swAccumulated += delta;
+          swStartTimestamp = now;
+        }
+        startStopwatchInterval();
+      }
+      renderStopwatch();
+    } catch (e) {
+      console.warn("Failed to load stopwatch", e);
+    }
+  }
+
+  function saveStopwatch() {
+    localStorage.setItem(
+      STOPWATCH_KEY,
+      JSON.stringify({
+        running: swRunning,
+        startTimestamp: swStartTimestamp,
+        accumulated: swAccumulated
+      })
+    );
+  }
+
+  function startStopwatchInterval() {
+    if (swInterval) return;
+    swInterval = setInterval(() => {
+      renderStopwatch();
+    }, 200);
+  }
+
+  function stopStopwatchInterval() {
+    if (swInterval) {
+      clearInterval(swInterval);
+      swInterval = null;
+    }
+  }
+
+  function renderStopwatch() {
+    let elapsed = swAccumulated;
+    if (swRunning && swStartTimestamp) {
+      elapsed += Date.now() - swStartTimestamp;
+    }
+    const sec = elapsed / 1000;
+    const { h, m, s } = secondsToHMS(sec);
+    stopwatchDisplay.textContent = pad(h) + ":" + pad(m) + ":" + pad(s);
+    stopwatchStatusEl.textContent = swRunning ? "Running…" : "Paused.";
+  }
+
+  function startStopwatch() {
+    if (swRunning) return;
+    swRunning = true;
+    swStartTimestamp = Date.now();
+    startStopwatchInterval();
+    saveStopwatch();
+    renderStopwatch();
+  }
+
+  function pauseStopwatch() {
+    if (!swRunning) return;
+    swRunning = false;
+    if (swStartTimestamp) {
+      swAccumulated += Date.now() - swStartTimestamp;
+      swStartTimestamp = null;
+    }
+    stopStopwatchInterval();
+    saveStopwatch();
+    renderStopwatch();
+  }
+
+  function resetStopwatch() {
+    swRunning = false;
+    swStartTimestamp = null;
+    swAccumulated = 0;
+    stopStopwatchInterval();
+    saveStopwatch();
+    renderStopwatch();
+  }
+
+  // ---------- ANALOG CLOCK ----------
+  function drawAnalogClock(date) {
+    const w = analogCanvas.width;
+    const h = analogCanvas.height;
+    const r = Math.min(w, h) / 2 - 6;
+    const cx = w / 2;
+    const cy = h / 2;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // face
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    // outer ring
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fillStyle = "#020617";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // ticks
+    for (let i = 0; i < 60; i++) {
+      const angle = (Math.PI * 2 * i) / 60;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      const inner = i % 5 === 0 ? r - 10 : r - 5;
+      ctx.beginPath();
+      ctx.moveTo(cos * inner, sin * inner);
+      ctx.lineTo(cos * r, sin * r);
+      ctx.strokeStyle = i % 5 === 0 ? "rgba(79,209,197,0.9)" : "rgba(148,163,184,0.7)";
+      ctx.lineWidth = i % 5 === 0 ? 2 : 1;
+      ctx.stroke();
+    }
+
+    const hours = date.getHours() % 12;
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
+
+    // hour hand
+    const hourAngle = (Math.PI * 2 * (hours + minutes / 60)) / 12;
+    ctx.save();
+    ctx.rotate(hourAngle);
+    ctx.beginPath();
+    ctx.moveTo(0, 4);
+    ctx.lineTo(0, -r * 0.5);
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
+    ctx.stroke();
+    ctx.restore();
+
+    // minute hand
+    const minuteAngle = (Math.PI * 2 * (minutes + seconds / 60)) / 60;
+    ctx.save();
+    ctx.rotate(minuteAngle);
+    ctx.beginPath();
+    ctx.moveTo(0, 6);
+    ctx.lineTo(0, -r * 0.75);
+    ctx.strokeStyle = "#4fd1c5";
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.stroke();
+    ctx.restore();
+
+    // second hand
+    const secondAngle = (Math.PI * 2 * seconds) / 60;
+    ctx.save();
+    ctx.rotate(secondAngle);
+    ctx.beginPath();
+    ctx.moveTo(0, 10);
+    ctx.lineTo(0, -r * 0.8);
+    ctx.strokeStyle = "#f56565";
+    ctx.lineWidth = 1;
+    ctx.lineCap = "round";
+    ctx.stroke();
+    ctx.restore();
+
+    // center
+    ctx.beginPath();
+    ctx.arc(0, 0, 3, 0, Math.PI * 2);
+    ctx.fillStyle = "#4fd1c5";
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  // ---------- MAIN TICK ----------
+  function tick() {
+    const now = new Date();
+    const h = now.getHours();
+    const m = now.getMinutes();
+    const s = now.getSeconds();
+    currentTimeEl.textContent = formatTime(h, m, s);
+    digitalSmallEl.textContent = formatTime(h, m, s);
+
+    const dateStr = now.toLocaleDateString(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric"
+    });
+    dateSmallEl.textContent = dateStr;
+
+    const nowMin = toMinutes(h, m);
+    const { current, next } = findCurrentAndNextBlock(nowMin);
+
+    if (current) {
+      const end = fromMinutes(current.endMin);
+      const secondsLeft = (current.endMin - nowMin) * 60 - s;
+      const { h: lh, m: lm, s: ls } = secondsToHMS(secondsLeft);
+      timeLeftEl.textContent = pad(lh) + ":" + pad(lm) + ":" + pad(ls);
+      endTimeEl.textContent = pad(end.h) + ":" + pad(end.m) + ":00";
+
+      timeLeftBox.classList.remove("muted");
+      endTimeBox.classList.remove("muted");
+      const isLow = secondsLeft <= 5 * 60;
+      timeLeftBox.classList.toggle("danger", isLow);
+      endTimeBox.classList.toggle("danger", isLow);
+
+      blockStatusEl.innerHTML =
+        "In block: <strong>" +
+        pad(fromMinutes(current.startMin).h) + ":" + pad(fromMinutes(current.startMin).m) +
+        " → " +
+        pad(end.h) + ":" + pad(end.m) +
+        "</strong>";
+    } else {
+      timeLeftEl.textContent = "--:--:--";
+      endTimeEl.textContent = "--:--:--";
+      timeLeftBox.classList.add("muted");
+      endTimeBox.classList.add("muted");
+      timeLeftBox.classList.remove("danger");
+      endTimeBox.classList.remove("danger");
+
+      if (next) {
+        const ns = fromMinutes(next.startMin);
+        const ne = fromMinutes(next.endMin);
+        blockStatusEl.innerHTML =
+          "No active block. Next: <strong>" +
+          pad(ns.h) + ":" + pad(ns.m) +
+          " → " +
+          pad(ne.h) + ":" + pad(ne.m) +
+          "</strong>";
+      } else if (scheduleBlocks.length) {
+        blockStatusEl.innerHTML =
+          "No more blocks today. First block was <strong>" +
+          pad(fromMinutes(scheduleBlocks[0].startMin).h) + ":" +
+          pad(fromMinutes(scheduleBlocks[0].startMin).m) +
+          "</strong>";
+      } else {
+        blockStatusEl.innerHTML = "No active block. Next block: <strong>—</strong>";
+      }
+    }
+
+    drawAnalogClock(now);
+  }
+
+  // ---------- INIT ----------
+  applyScheduleBtn.addEventListener("click", applyScheduleFromText);
+  resetScheduleBtn.addEventListener("click", resetSchedule);
+
+  startStopwatchBtn.addEventListener("click", startStopwatch);
+  pauseStopwatchBtn.addEventListener("click", pauseStopwatch);
+  resetStopwatchBtn.addEventListener("click", resetStopwatch);
+
+  loadSchedule();
+  loadStopwatch();
+  renderScheduleSummary();
+  renderStopwatch();
+  statusTextEl.textContent = "All state is local to this browser.";
+
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
+<script>
+// Reads the schedule cookie named "schedule"
+function getScheduleFromCookie() {
+    const match = document.cookie.match(/(?:^|;\s*)schedule=([^;]+)/);
+    if (!match) return [];
+
+    // Cookie format: "08:00/08:58 09:02/09:44 ..."
+    const raw = decodeURIComponent(match[1]).trim();
+    const lines = raw.split(/[\n ]+/).filter(Boolean);
+
+    const blocks = [];
+    for (let line of lines) {
+        const [s, e] = line.split("/");
+        if (!s || !e) continue;
+
+        const [sh, sm] = s.split(":").map(Number);
+        const [eh, em] = e.split(":").map(Number);
+
+        let start = sh * 60 + sm;
+        let end = eh * 60 + em;
+
+        if (end <= start) end = start + 1; // auto-fix bad lines
+
+        blocks.push({ start, end });
+    }
+
+    return blocks.sort((a, b) => a.start - b.start);
+}
+
+// Format helpers
+function pad(n) { return n.toString().padStart(2, "0"); }
+function fmt(h, m, s) { return pad(h) + ":" + pad(m) + ":" + pad(s); }
+function fmtHM(min) { return pad(Math.floor(min / 60)) + ":" + pad(min % 60); }
+
+// Main loop
+function updateTabTitle() {
+    const blocks = getScheduleFromCookie();
+
+    const now = new Date();
+    const h = now.getHours();
+    const m = now.getMinutes();
+    const s = now.getSeconds();
+    const nowMin = h * 60 + m;
+
+    let current = null;
+    let next = null;
+
+    for (let b of blocks) {
+        if (nowMin >= b.start && nowMin < b.end) {
+            current = b;
+            break;
+        }
+        if (nowMin < b.start && !next) next = b;
+    }
+
+    // If in a block → show time left
+    if (current) {
+        const secLeft = (current.end - nowMin) * 60 - s;
+        const lh = Math.floor(secLeft / 3600);
+        const lm = Math.floor((secLeft % 3600) / 60);
+        const ls = secLeft % 60;
+
+        document.title = fmt(h, m, s) + " — " + fmt(lh, lm, ls);
+    } 
+    else {
+        // No block active
+        document.title = fmt(h, m, s) + " — No block";
+    }
+}
+
+// Run every second
+setInterval(updateTabTitle, 1000);
+updateTabTitle();
+</script>
+</body>
+</html>

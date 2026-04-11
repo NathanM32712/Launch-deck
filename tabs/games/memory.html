@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Memory</title>
+<style>
+    body {
+        margin: 0;
+        background: #0b0b12;
+        color: #f5f5ff;
+        font-family: system-ui, sans-serif;
+        padding: 20px;
+    }
+
+    h1 {
+        font-size: 28px;
+        margin-bottom: 6px;
+        color: #cfa8ff;
+    }
+
+    p {
+        font-size: 14px;
+        color: #c8c8e0;
+        margin-top: 0;
+        margin-bottom: 16px;
+    }
+
+    .top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+    }
+
+    .stats {
+        font-size: 14px;
+        color: #a0a0c0;
+    }
+
+    .btn {
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: none;
+        background: #8a2be2;
+        color: #fff;
+        cursor: pointer;
+        font-size: 13px;
+    }
+
+    .board {
+        margin-top: 10px;
+        display: grid;
+        grid-template-columns: repeat(4, 80px);
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .card {
+        width: 80px;
+        height: 80px;
+        border-radius: 10px;
+        background: #14141f;
+        border: 1px solid #26263a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 26px;
+        transition: transform 0.12s, background 0.12s, border-color 0.12s;
+        user-select: none;
+    }
+
+    .card.flipped {
+        background: #8a2be2;
+        border-color: #8a2be2;
+        box-shadow: 0 0 12px rgba(138,43,226,0.7);
+        transform: scale(1.03);
+    }
+
+    .card.matched {
+        background: #1f8a4d;
+        border-color: #1f8a4d;
+        color: #dfffe9;
+        cursor: default;
+        box-shadow: 0 0 10px rgba(31,138,77,0.7);
+    }
+
+    .message {
+        margin-top: 16px;
+        text-align: center;
+        font-size: 15px;
+        color: #c8c8e0;
+    }
+
+    @media (max-width: 480px) {
+        .board {
+            grid-template-columns: repeat(4, 64px);
+            gap: 8px;
+        }
+        .card {
+            width: 64px;
+            height: 64px;
+            font-size: 22px;
+        }
+    }
+</style>
+</head>
+<body>
+
+<h1>Memory</h1>
+<p>Flip two cards at a time and try to find all the matching pairs.</p>
+
+<div class="top-row">
+    <div class="stats" id="stats">
+        Moves: 0 · Matches: 0 / 8
+    </div>
+    <button class="btn" id="resetBtn">New Game</button>
+</div>
+
+<div class="board" id="board"></div>
+
+<div class="message" id="message"></div>
+
+<script>
+const boardEl = document.getElementById("board");
+const statsEl = document.getElementById("stats");
+const messageEl = document.getElementById("message");
+const resetBtn = document.getElementById("resetBtn");
+
+const symbols = ["★","◆","●","▲","♥","♣","♠","☀"];
+
+let cards = [];
+let flipped = [];
+let lock = false;
+let moves = 0;
+let matches = 0;
+
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+function updateStats() {
+    statsEl.textContent = `Moves: ${moves} · Matches: ${matches} / ${symbols.length}`;
+}
+
+function buildBoard() {
+    boardEl.innerHTML = "";
+    cards = [];
+    flipped = [];
+    lock = false;
+    moves = 0;
+    matches = 0;
+    messageEl.textContent = "";
+
+    const deck = [...symbols, ...symbols];
+    shuffle(deck);
+
+    deck.forEach((sym, index) => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.dataset.index = index;
+        div.dataset.symbol = sym;
+        div.textContent = "";
+        div.onclick = () => handleCardClick(index);
+        boardEl.appendChild(div);
+        cards.push(div);
+    });
+
+    updateStats();
+}
+
+function handleCardClick(index) {
+    if (lock) return;
+    const card = cards[index];
+    if (card.classList.contains("flipped") || card.classList.contains("matched")) return;
+
+    card.classList.add("flipped");
+    card.textContent = card.dataset.symbol;
+    flipped.push(index);
+
+    if (flipped.length === 2) {
+        lock = true;
+        moves++;
+        updateStats();
+
+        const [i1, i2] = flipped;
+        const c1 = cards[i1];
+        const c2 = cards[i2];
+
+        if (c1.dataset.symbol === c2.dataset.symbol) {
+            setTimeout(() => {
+                c1.classList.remove("flipped");
+                c2.classList.remove("flipped");
+                c1.classList.add("matched");
+                c2.classList.add("matched");
+                flipped = [];
+                lock = false;
+                matches++;
+                updateStats();
+                if (matches === symbols.length) {
+                    messageEl.textContent = "Nice! You matched all pairs.";
+                }
+            }, 400);
+        } else {
+            setTimeout(() => {
+                c1.classList.remove("flipped");
+                c2.classList.remove("flipped");
+                c1.textContent = "";
+                c2.textContent = "";
+                flipped = [];
+                lock = false;
+            }, 700);
+        }
+    }
+}
+
+resetBtn.onclick = buildBoard;
+
+buildBoard();
+</script>
+
+</body>
+</html>

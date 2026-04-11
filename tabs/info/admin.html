@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    body {
+        margin: 0;
+        background: #0b0b12;
+        color: #e6e6ff;
+        font-family: system-ui, sans-serif;
+    }
+
+    h1 {
+        margin-top: 0;
+        padding: 20px;
+        font-size: 26px;
+        color: #cfa8ff;
+    }
+
+    .section {
+        background: #14141f;
+        border: 1px solid #26263a;
+        padding: 20px;
+        margin: 20px;
+        border-radius: 12px;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 10px;
+        margin-top: 8px;
+        margin-bottom: 12px;
+        border-radius: 8px;
+        border: 1px solid #33334d;
+        background: #0f0f17;
+        color: white;
+    }
+
+    button {
+        padding: 10px 16px;
+        border-radius: 8px;
+        border: none;
+        background: #8a2be2;
+        color: white;
+        cursor: pointer;
+        font-size: 15px;
+    }
+
+    button:hover {
+        background: #a55cff;
+    }
+
+    /* CMD BAR */
+    #cmdBar {
+        position: fixed;
+        top: -60px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80%;
+        max-width: 600px;
+        background: #14141f;
+        border: 1px solid #26263a;
+        border-radius: 10px;
+        padding: 10px;
+        transition: 0.25s ease;
+        z-index: 9999;
+    }
+
+    #cmdInput {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        background: #0f0f0f;
+        color: white;
+        font-size: 16px;
+    }
+</style>
+</head>
+<body>
+
+<!-- CMD BAR -->
+<div id="cmdBar">
+    <input id="cmdInput" placeholder='Type a command… (ex: activate role "mod")'>
+</div>
+
+<h1>Admin Control Panel</h1>
+
+<div class="section">
+    <h2>Role Override</h2>
+    <select id="roleSelect">
+        <option value="guest">Guest</option>
+        <option value="user">User</option>
+        <option value="admin">Admin</option>
+        <option value="mod">Mod</option>
+        <option value="owner">Owner</option>
+    </select>
+    <button onclick="applyRole()">Apply Role</button>
+</div>
+
+<div class="section">
+    <h2>Cookie Editor</h2>
+    <label>auth Cookie Value:</label>
+    <input id="cookieInput" placeholder='Example: userlogin:true|userid:Nathan|role:owner'>
+    <button onclick="applyCookie()">Set Cookie</button>
+    <button onclick="clearCookie()">Clear Cookie</button>
+</div>
+
+<div class="section" id="adminTools" style="display:none;">
+    <h2>Admin Tools</h2>
+    <button onclick="unbanPilot()">Unban Pilot</button>
+</div>
+
+<div class="section">
+    <h2>View-As Reset</h2>
+    <button onclick="resetViewAs()">Reset viewAsRole</button>
+</div>
+
+<script>
+// ---------------- ROLE LOADING (minimal fix) ----------------
+
+// read auth cookie
+function getAuth() {
+    const match = document.cookie.match(/auth=([^;]+)/);
+    if (!match) return null;
+
+    const raw = match[1];
+    const parts = raw.split("|");
+    const data = {};
+
+    parts.forEach(p => {
+        const [key, val] = p.split(":");
+        data[key] = decodeURIComponent(val || "");
+    });
+
+    return data;
+}
+
+const auth = getAuth();
+
+// default user object
+window.user = {
+    loggedIn: false,
+    userid: "Guest",
+    display: "",
+    role: "guest"
+};
+
+// load from cookie
+if (auth && auth.userlogin === "true") {
+    window.user.loggedIn = true;
+    window.user.userid = auth.userid || "User";
+    window.user.display = auth.displayname || auth.userid || "User";
+    window.user.role = auth.role || "user";
+}
+
+// apply viewAs override
+const override = localStorage.getItem("viewAsRole");
+if (override) {
+    window.user.role = override;
+}
+
+// show admin tools if admin or owner
+window.addEventListener("DOMContentLoaded", () => {
+    if (window.user.role === "admin" || window.user.role === "owner" || window.user.role === "mod") {
+        document.getElementById("adminTools").style.display = "block";
+    }
+});
+
+// ---------------- CMD SYSTEM ----------------
+let keysPressed = {};
+
+document.addEventListener("keydown", e => {
+    keysPressed[e.key] = true;
+
+    if (keysPressed["c"] && keysPressed["m"] && keysPressed["d"]) {
+        document.getElementById("cmdBar").style.top = "20px";
+        document.getElementById("cmdInput").focus();
+    }
+});
+
+document.addEventListener("keyup", e => {
+    delete keysPressed[e.key];
+});
+
+document.getElementById("cmdInput").addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+        const cmd = e.target.value.trim();
+        handleCMD(cmd);
+        e.target.value = "";
+    }
+});
+
+function handleCMD(cmd) {
+    if (cmd.startsWith("activate role")) {
+        const role = cmd.split('"')[1];
+        if (!role) return;
+
+        localStorage.setItem("viewAsRole", role);
+        alert(`Role temporarily set to: ${role}`);
+        return;
+    }
+
+    alert("Unknown command");
+}
+
+// ---------------- ROLE OVERRIDE ----------------
+function applyRole() {
+    const role = document.getElementById("roleSelect").value;
+    localStorage.setItem("viewAsRole", role);
+    alert("Role set to: " + role);
+}
+
+// ---------------- COOKIE EDITOR ----------------
+function applyCookie() {
+    const value = document.getElementById("cookieInput").value;
+    document.cookie = "auth=" + value + "; path=/;";
+    alert("Cookie updated.");
+}
+
+function clearCookie() {
+    document.cookie = "auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    alert("Cookie cleared.");
+}
+
+// ---------------- VIEW-AS RESET ----------------
+function resetViewAs() {
+    localStorage.removeItem("viewAsRole");
+    alert("viewAsRole reset.");
+}
+
+// ---------------- UNBAN BUTTON ----------------
+function unbanPilot() {
+    document.cookie = "banned=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    alert("Pilot unbanned.");
+}
+</script>
+
+</body>
+</html>

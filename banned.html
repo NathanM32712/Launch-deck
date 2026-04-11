@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Access Denied</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    body {
+        margin: 0;
+        background: radial-gradient(circle at top, #2a0f1f 0, #0b0004 60%);
+        color: #ff4d4d;
+        font-family: system-ui, sans-serif;
+        text-align: center;
+        padding-top: 140px;
+        user-select: none;
+    }
+
+    .box {
+        background: #14070d;
+        border: 1px solid #3a0f1f;
+        border-radius: 16px;
+        padding: 40px;
+        max-width: 420px;
+        margin: 0 auto;
+        box-shadow: 0 0 20px rgba(255, 0, 0, 0.25);
+    }
+
+    h1 {
+        font-size: 42px;
+        margin-bottom: 12px;
+        color: #ff6b6b;
+        text-shadow: 0 0 12px rgba(255, 0, 0, 0.5);
+    }
+
+    p {
+        font-size: 20px;
+        color: #ffb3b3;
+        margin-top: 0;
+    }
+
+    #unbanBtn {
+        margin-top: 25px;
+        padding: 12px 20px;
+        border-radius: 10px;
+        border: none;
+        background: #8a2be2;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        transition: 0.2s;
+        display: none; /* hidden unless admin/owner */
+    }
+
+    #unbanBtn:hover {
+        background: #a45cff;
+        box-shadow: 0 0 12px rgba(138, 43, 226, 0.6);
+    }
+</style>
+</head>
+<body>
+
+<div class="box">
+    <h1>Access Denied</h1>
+    <p>You are permanently blocked from Launch Deck.</p>
+
+    <button id="unbanBtn" onclick="removeBan()">Remove Ban</button>
+</div>
+
+<script>
+// ---------------- READ AUTH COOKIE ----------------
+function getAuth() {
+    const match = document.cookie.match(/auth=([^;]+)/);
+    if (!match) return null;
+
+    const raw = match[1];
+    const parts = raw.split("|");
+    const data = {};
+
+    parts.forEach(p => {
+        const [key, val] = p.split(":");
+        data[key] = decodeURIComponent(val || "");
+    });
+
+    return data;
+}
+
+const auth = getAuth();
+const role = auth?.role || "guest";
+
+// ---------------- SHOW UNBAN BUTTON FOR ADMINS ----------------
+if (role === "owner" || role === "admin") {
+    document.getElementById("unbanBtn").style.display = "inline-block";
+}
+
+// ---------------- REMOVE BAN ----------------
+function removeBan() {
+    // Delete banned cookie
+    document.cookie = "banned=;path=/;max-age=0";
+
+    // Redirect back to Launch Deck
+    window.location.href = "../index.html";
+}
+</script>
+
+</body>
+</html>

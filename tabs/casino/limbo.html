@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Limbo</title>
+<style>
+    body {
+        margin: 0;
+        background: #0b0b12;
+        color: #f5f5ff;
+        font-family: system-ui, sans-serif;
+        padding: 20px;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 28px;
+        margin-bottom: 6px;
+        color: #cfa8ff;
+    }
+
+    p {
+        font-size: 14px;
+        color: #c8c8e0;
+        margin-top: 0;
+        margin-bottom: 20px;
+    }
+
+    .panel {
+        background: #14141f;
+        border: 1px solid #26263a;
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 420px;
+        margin: 0 auto;
+    }
+
+    input {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        background: #0f0f0f;
+        color: #fff;
+        font-size: 15px;
+        margin-bottom: 14px;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        background: #8a2be2;
+        color: white;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 6px;
+    }
+
+    .spinner {
+        margin-top: 20px;
+        font-size: 40px;
+        font-weight: 700;
+        height: 50px;
+        color: #fff;
+        transition: 0.1s;
+    }
+
+    .result {
+        margin-top: 20px;
+        font-size: 32px;
+        font-weight: 700;
+        min-height: 40px;
+    }
+
+    .green {
+        color: #4dff88;
+        text-shadow: 0 0 12px rgba(77,255,136,0.7);
+    }
+
+    .red {
+        color: #ff4d4d;
+        text-shadow: 0 0 12px rgba(255,77,77,0.7);
+    }
+
+    .balance {
+        margin-top: 10px;
+        font-size: 16px;
+        color: #a0a0c0;
+    }
+</style>
+</head>
+<body>
+
+<h1>Limbo</h1>
+<p>Pick a multiplier. If the roll is higher, you win.</p>
+
+<div class="panel">
+
+    <input id="bet" type="number" placeholder="Bet amount">
+    <input id="target" type="number" placeholder="Target multiplier (e.g., 2.5)">
+
+    <button class="btn" id="playBtn">Play</button>
+
+    <div class="spinner" id="spinner">—</div>
+
+    <div class="result" id="result"></div>
+
+    <div class="balance" id="balance"></div>
+</div>
+
+<script>
+/* ---------------- Login Check ---------------- */
+function isLoggedIn() {
+    const match = document.cookie.match(/auth=([^;]+)/);
+    if (!match) return false;
+    return match[1].includes("userlogin:true");
+}
+
+/* ---------------- Shared Casino Balance ---------------- */
+function getBalance() {
+    if (!isLoggedIn()) return 1000; // guest balance resets every load
+
+    const match = document.cookie.match(/casinoBalance=([^;]+)/);
+    return match ? parseFloat(match[1]) : 1000;
+}
+
+function setBalance(v) {
+    if (!isLoggedIn()) return; // guests cannot save balance
+
+    document.cookie = "casinoBalance=" + v + ";path=/;max-age=31536000";
+}
+
+let balance = getBalance();
+document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+/* ---------------- Weighted RNG ---------------- */
+function weightedMultiplier() {
+    const r = Math.random();
+
+    if (r < 0.70) return (1 + Math.random() * 1.5).toFixed(2);      // Common (1–2.5)
+    if (r < 0.90) return (2.5 + Math.random() * 3).toFixed(2);      // Uncommon (2.5–5.5)
+    if (r < 0.98) return (5.5 + Math.random() * 10).toFixed(2);     // Rare (5.5–15.5)
+    return (15.5 + Math.random() * 50).toFixed(2);                  // Ultra (15–65)
+}
+
+/* ---------------- Spin Animation ---------------- */
+function animateSpin(finalValue, callback) {
+    const spinner = document.getElementById("spinner");
+    let steps = 40;
+    let i = 0;
+
+    const interval = setInterval(() => {
+        spinner.textContent = (Math.random() * 20).toFixed(2);
+        i++;
+        if (i >= steps) {
+            clearInterval(interval);
+            spinner.textContent = finalValue;
+            callback();
+        }
+    }, 40);
+}
+
+/* ---------------- Play ---------------- */
+document.getElementById("playBtn").onclick = () => {
+    const bet = parseFloat(document.getElementById("bet").value);
+    const target = parseFloat(document.getElementById("target").value);
+    const resultEl = document.getElementById("result");
+
+    if (!bet || bet <= 0) {
+        resultEl.textContent = "Enter a valid bet.";
+        resultEl.className = "result red";
+        return;
+    }
+
+    if (!target || target <= 1) {
+        resultEl.textContent = "Multiplier must be > 1.";
+        resultEl.className = "result red";
+        return;
+    }
+
+    if (bet > balance) {
+        resultEl.textContent = "Not enough balance.";
+        resultEl.className = "result red";
+        return;
+    }
+
+    resultEl.textContent = "";
+    const roll = weightedMultiplier();
+
+    animateSpin(roll, () => {
+        const rollNum = parseFloat(roll);
+
+        if (rollNum > target) {
+            const win = bet * target;
+            balance += win;
+            resultEl.textContent = "WIN +" + win.toFixed(2);
+            resultEl.className = "result green";
+        } else {
+            balance -= bet;
+            resultEl.textContent = "LOSE -" + bet.toFixed(2);
+            resultEl.className = "result red";
+        }
+
+        setBalance(balance);
+        document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+    });
+};
+</script>
+
+</body>
+</html>

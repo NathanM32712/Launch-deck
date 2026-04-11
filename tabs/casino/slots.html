@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Slots</title>
+<style>
+    body {
+        margin: 0;
+        background: #0b0b12;
+        color: #f5f5ff;
+        font-family: system-ui, sans-serif;
+        padding: 20px;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 28px;
+        margin-bottom: 6px;
+        color: #cfa8ff;
+    }
+
+    p {
+        font-size: 14px;
+        color: #c8c8e0;
+        margin-top: 0;
+        margin-bottom: 20px;
+    }
+
+    .panel {
+        background: #14141f;
+        border: 1px solid #26263a;
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 520px;
+        margin: 0 auto;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        grid-template-rows: repeat(3, 60px);
+        gap: 8px;
+        margin-top: 20px;
+    }
+
+    .cell {
+        background: #0f0f17;
+        border: 1px solid #26263a;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        color: #fff;
+        transition: 0.15s;
+    }
+
+    input {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        background: #0f0f0f;
+        color: #fff;
+        font-size: 15px;
+        margin-bottom: 14px;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        background: #8a2be2;
+        color: white;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 6px;
+    }
+
+    .result {
+        margin-top: 20px;
+        font-size: 28px;
+        font-weight: 700;
+        min-height: 40px;
+    }
+
+    .green { color: #4dff88; }
+    .red { color: #ff4d4d; }
+
+    .balance {
+        margin-top: 10px;
+        font-size: 16px;
+        color: #a0a0c0;
+    }
+</style>
+</head>
+<body>
+
+<h1>Slots</h1>
+<p>3 rows × 5 columns. Rare wins. Bombs divide your win.</p>
+
+<div class="panel">
+
+    <input id="bet" type="number" placeholder="Bet amount">
+
+    <button class="btn" id="spinBtn">Spin</button>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="result" id="result"></div>
+
+    <div class="balance" id="balance"></div>
+</div>
+
+<script>
+/* ---------------- Login Check ---------------- */
+function isLoggedIn() {
+    const match = document.cookie.match(/auth=([^;]+)/);
+    if (!match) return false;
+    return match[1].includes("userlogin:true");
+}
+
+/* ---------------- Shared Casino Balance ---------------- */
+function getBalance() {
+    if (!isLoggedIn()) return 1000; // guest balance resets every load
+
+    const match = document.cookie.match(/casinoBalance=([^;]+)/);
+    return match ? parseFloat(match[1]) : 1000;
+}
+
+function setBalance(v) {
+    if (!isLoggedIn()) return; // guests cannot save balance
+
+    document.cookie = "casinoBalance=" + v + ";path=/;max-age=31536000";
+}
+
+let balance = getBalance();
+document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+/* ---------------- Symbol Weights ---------------- */
+const symbols = [
+    { icon: "⭐", weight: 2 },
+    { icon: "🍇", weight: 2 },
+    { icon: "🍒", weight: 4 },
+    { icon: "💎", weight: 1 },
+    { icon: "🔔", weight: 4 },
+    { icon: "🍋", weight: 6 },
+    { icon: "💣", weight: 8 }
+];
+
+function pickSymbol() {
+    const total = symbols.reduce((a, b) => a + b.weight, 0);
+    let r = Math.random() * total;
+
+    for (let s of symbols) {
+        if (r < s.weight) return s.icon;
+        r -= s.weight;
+    }
+}
+
+/* ---------------- Spin Animation ---------------- */
+function animateGrid(finalGrid, callback) {
+    const grid = document.getElementById("grid");
+    grid.innerHTML = "";
+
+    const cells = [];
+
+    for (let i = 0; i < 15; i++) {
+        const div = document.createElement("div");
+        div.className = "cell";
+        div.textContent = "❔";
+        grid.appendChild(div);
+        cells.push(div);
+    }
+
+    let frames = 25;
+    let i = 0;
+
+    const interval = setInterval(() => {
+        for (let c of cells) {
+            c.textContent = symbols[Math.floor(Math.random() * symbols.length)].icon;
+        }
+        i++;
+        if (i >= frames) {
+            clearInterval(interval);
+            for (let j = 0; j < 15; j++) {
+                cells[j].textContent = finalGrid[j];
+            }
+            callback();
+        }
+    }, 40);
+}
+
+/* ---------------- Spin Logic ---------------- */
+document.getElementById("spinBtn").onclick = () => {
+    const bet = parseFloat(document.getElementById("bet").value);
+    const resultEl = document.getElementById("result");
+
+    if (!bet || bet <= 0) {
+        resultEl.textContent = "Enter a valid bet.";
+        resultEl.className = "result red";
+        return;
+    }
+
+    if (bet > balance) {
+        resultEl.textContent = "Not enough balance.";
+        resultEl.className = "result red";
+        return;
+    }
+
+    resultEl.textContent = "";
+
+    // Generate 3x5 grid
+    const grid = [];
+    for (let i = 0; i < 15; i++) grid.push(pickSymbol());
+
+    animateGrid(grid, () => {
+        // Check wins
+        let totalWin = 0;
+        let bombs = 0;
+
+        // Count bombs
+        for (let s of grid) if (s === "💣") bombs++;
+
+        // Check each row for 3-in-a-row
+        for (let r = 0; r < 3; r++) {
+            const row = grid.slice(r * 5, r * 5 + 5);
+
+            for (let c = 0; c < 3; c++) {
+                if (row[c] === row[c+1] && row[c] === row[c+2] && row[c] !== "💣") {
+                    const symbol = row[c];
+
+                    // Count extra copies anywhere on board
+                    const extra = grid.filter(x => x === symbol).length - 3;
+
+                    let base = bet * 3;
+                    let payout = base ** (extra + 1);
+
+                    totalWin += payout;
+                }
+            }
+        }
+
+        // Bomb penalty: divide win by 2 for each bomb
+        if (bombs > 0 && totalWin > 0) {
+            totalWin = totalWin / (2 ** bombs);
+        }
+
+        // Apply to balance
+        if (totalWin > 0) {
+            balance += totalWin;
+            resultEl.textContent = "WIN +" + totalWin.toFixed(2);
+            resultEl.className = "result green";
+        } else {
+            balance -= bet;
+            resultEl.textContent = "LOSE -" + bet.toFixed(2);
+            resultEl.className = "result red";
+        }
+
+        setBalance(balance);
+        document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+    });
+};
+</script>
+
+</body>
+</html>

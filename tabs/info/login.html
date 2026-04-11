@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    body {
+        margin: 0;
+        background: #0b0b12;
+        color: #fff;
+        font-family: system-ui, sans-serif;
+        padding: 40px;
+        text-align: center;
+    }
+
+    .box {
+        background: #14141f;
+        border: 1px solid #26263a;
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 380px;
+        margin: 0 auto;
+    }
+
+    input, button {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        background: #0f0f0f;
+        color: #fff;
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    button {
+        background: #8a2be2;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    button:hover {
+        background: #a45cff;
+        box-shadow: 0 0 12px rgba(138, 43, 226, 0.6);
+    }
+
+    #msg {
+        margin-top: 10px;
+        font-size: 18px;
+        color: #ff6b6b;
+    }
+</style>
+</head>
+<body>
+
+<h1>Login</h1>
+
+<div class="box">
+    <input id="username" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+    <input id="displayname" placeholder="Display Name">
+    <button onclick="login()">Login</button>
+    <div id="msg"></div>
+</div>
+
+<script>
+function login() {
+    const u = document.getElementById("username").value.trim();
+    const p = document.getElementById("password").value.trim();
+    const d = document.getElementById("displayname").value.trim();
+
+    const username = u.toLowerCase();
+
+    // ---------------- AUTO-BAN ----------------
+    if (username === "pilot") {
+        document.cookie = "banned=true;path=/;max-age=31536000";
+        window.location.href = "/banned.html";
+        return;
+    }
+
+    // ---------------- ROLE SYSTEM ----------------
+    let role = "user";
+
+    // OWNER ACCOUNT
+    if (
+        username === "nathanm32712" &&
+        p === "Marty32712" &&
+        d === "NathanM32712"
+    ) {
+        role = "owner";
+    }
+
+    // ---------------- SAVE USER LOCALLY ----------------
+    localStorage.setItem("user_" + username, JSON.stringify({
+        password: p,
+        displayname: d || u,
+        role: role
+    }));
+
+    // ---------------- CREATE AUTH COOKIE ----------------
+    const cookie =
+        `userlogin:true` +
+        `|userid:${username}` +
+        `|displayname:${encodeURIComponent(d || u)}` +
+        `|role:${role}`;
+
+    document.cookie = "auth=" + cookie + ";path=/;max-age=31536000";
+
+    // ---------------- REDIRECT ----------------
+    window.location.href = "/Launch-Deck";
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Hi-Lo</title>
+<style>
+    body {
+        margin: 0;
+        background: #0b0b12;
+        color: #f5f5ff;
+        font-family: system-ui, sans-serif;
+        padding: 20px;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 32px;
+        margin-bottom: 10px;
+        color: #cfa8ff;
+    }
+
+    .panel {
+        background: #14141f;
+        border: 1px solid #26263a;
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 480px;
+        margin: 0 auto;
+    }
+
+    #card {
+        font-size: 80px;
+        margin: 20px 0;
+        padding: 20px;
+        background: #1a1a25;
+        border: 1px solid #26263a;
+        border-radius: 12px;
+        width: 120px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    input, button {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        background: #0f0f0f;
+        color: #fff;
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    button {
+        background: #8a2be2;
+        cursor: pointer;
+    }
+
+    #result {
+        margin-top: 20px;
+        font-size: 28px;
+        font-weight: 700;
+    }
+
+    .green { color: #4dff88; }
+    .red { color: #ff4d4d; }
+
+    #balance {
+        margin-top: 10px;
+        font-size: 18px;
+        color: #a0a0c0;
+    }
+
+    .btnRow {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btnRow button {
+        flex: 1;
+    }
+</style>
+</head>
+<body>
+
+<h1>Hi-Lo</h1>
+
+<div class="panel">
+
+    <input id="bet" type="number" placeholder="Bet amount">
+    <button id="startBtn">Start Round</button>
+
+    <div id="card">?</div>
+
+    <div class="btnRow">
+        <button id="higherBtn" disabled>Higher</button>
+        <button id="lowerBtn" disabled>Lower</button>
+    </div>
+
+    <div id="result"></div>
+    <div id="balance"></div>
+</div>
+
+<script>
+/* ---------------- Login Check ---------------- */
+function isLoggedIn() {
+    const match = document.cookie.match(/auth=([^;]+)/);
+    return match && match[1].includes("userlogin:true");
+}
+
+/* ---------------- Shared Casino Balance ---------------- */
+function getBalance() {
+    if (!isLoggedIn()) return 1000;
+    const match = document.cookie.match(/casinoBalance=([^;]+)/);
+    return match ? parseFloat(match[1]) : 1000;
+}
+
+function setBalance(v) {
+    if (!isLoggedIn()) return;
+    document.cookie = "casinoBalance=" + v + ";path=/;max-age=31536000";
+}
+
+let balance = getBalance();
+document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+/* ---------------- Hi-Lo Logic ---------------- */
+const cardEl = document.getElementById("card");
+const resultEl = document.getElementById("result");
+
+let currentCard = null;
+let betAmount = 0;
+let gameActive = false;
+
+function drawCard() {
+    return Math.floor(Math.random() * 13) + 1; // 1–13
+}
+
+function cardSymbol(n) {
+    if (n === 1) return "A";
+    if (n === 11) return "J";
+    if (n === 12) return "Q";
+    if (n === 13) return "K";
+    return n;
+}
+
+function startRound() {
+    gameActive = true;
+    currentCard = drawCard();
+    cardEl.textContent = cardSymbol(currentCard);
+    resultEl.textContent = "";
+
+    document.getElementById("higherBtn").disabled = false;
+    document.getElementById("lowerBtn").disabled = false;
+}
+
+function guess(higher) {
+    if (!gameActive) return;
+
+    const nextCard = drawCard();
+    cardEl.textContent = cardSymbol(nextCard);
+
+    let win = false;
+
+    if (higher && nextCard > currentCard) win = true;
+    if (!higher && nextCard < currentCard) win = true;
+
+    if (nextCard === currentCard) {
+        resultEl.textContent = "Tie! No win, no loss.";
+        resultEl.className = "";
+        currentCard = nextCard;
+        return;
+    }
+
+    if (win) {
+        const payout = betAmount * 1.9;
+        balance += payout;
+        resultEl.textContent = "WIN +" + payout.toFixed(2);
+        resultEl.className = "green";
+    } else {
+        resultEl.textContent = "LOSE -" + betAmount.toFixed(2);
+        resultEl.className = "red";
+    }
+
+    setBalance(balance);
+    document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+    document.getElementById("higherBtn").disabled = true;
+    document.getElementById("lowerBtn").disabled = true;
+
+    gameActive = false;
+}
+
+/* ---------------- Buttons ---------------- */
+document.getElementById("startBtn").onclick = () => {
+    betAmount = parseFloat(document.getElementById("bet").value);
+
+    if (!betAmount || betAmount <= 0) return;
+    if (betAmount > balance) return;
+
+    balance -= betAmount;
+    setBalance(balance);
+    document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+    startRound();
+};
+
+document.getElementById("higherBtn").onclick = () => guess(true);
+document.getElementById("lowerBtn").onclick = () => guess(false);
+</script>
+
+</body>
+</html>

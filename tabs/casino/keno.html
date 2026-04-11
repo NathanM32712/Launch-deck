@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Keno</title>
+<style>
+    body {
+        margin: 0;
+        background: #0b0b12;
+        color: #f5f5ff;
+        font-family: system-ui, sans-serif;
+        padding: 20px;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 32px;
+        margin-bottom: 10px;
+        color: #cfa8ff;
+    }
+
+    .panel {
+        background: #14141f;
+        border: 1px solid #26263a;
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 520px;
+        margin: 0 auto;
+    }
+
+    #grid {
+        display: grid;
+        grid-template-columns: repeat(5, 60px);
+        grid-gap: 10px;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    .tile {
+        width: 60px;
+        height: 60px;
+        background: #1a1a25;
+        border: 1px solid #26263a;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        user-select: none;
+    }
+
+    .selected {
+        background: #8a2be2 !important;
+        color: #fff;
+    }
+
+    .hit {
+        background: #4dff88 !important;
+        color: #000;
+    }
+
+    .miss {
+        background: #ff4d4d !important;
+        color: #fff;
+    }
+
+    input, button {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        background: #0f0f0f;
+        color: #fff;
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    button {
+        background: #8a2be2;
+        cursor: pointer;
+    }
+
+    #result {
+        margin-top: 20px;
+        font-size: 28px;
+        font-weight: 700;
+    }
+
+    .green { color: #4dff88; }
+    .red { color: #ff4d4d; }
+
+    #balance {
+        margin-top: 10px;
+        font-size: 18px;
+        color: #a0a0c0;
+    }
+</style>
+</head>
+<body>
+
+<h1>Keno</h1>
+
+<div class="panel">
+
+    <input id="bet" type="number" placeholder="Bet amount">
+    <button id="playBtn">Play</button>
+
+    <div id="grid"></div>
+
+    <div id="result"></div>
+    <div id="balance"></div>
+</div>
+
+<script>
+/* ---------------- Login Check ---------------- */
+function isLoggedIn() {
+    const match = document.cookie.match(/auth=([^;]+)/);
+    return match && match[1].includes("userlogin:true");
+}
+
+/* ---------------- Shared Casino Balance ---------------- */
+function getBalance() {
+    if (!isLoggedIn()) return 1000;
+    const match = document.cookie.match(/casinoBalance=([^;]+)/);
+    return match ? parseFloat(match[1]) : 1000;
+}
+
+function setBalance(v) {
+    if (!isLoggedIn()) return;
+    document.cookie = "casinoBalance=" + v + ";path=/;max-age=31536000";
+}
+
+let balance = getBalance();
+document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+/* ---------------- Keno Logic ---------------- */
+const gridEl = document.getElementById("grid");
+let selected = [];
+
+function buildGrid() {
+    gridEl.innerHTML = "";
+    selected = [];
+
+    for (let i = 1; i <= 25; i++) {
+        const tile = document.createElement("div");
+        tile.className = "tile";
+        tile.textContent = i;
+
+        tile.onclick = () => {
+            if (selected.includes(i)) {
+                selected = selected.filter(n => n !== i);
+                tile.classList.remove("selected");
+            } else {
+                if (selected.length >= 10) return;
+                selected.push(i);
+                tile.classList.add("selected");
+            }
+        };
+
+        gridEl.appendChild(tile);
+    }
+}
+
+buildGrid();
+
+/* ---------------- Payout Table ---------------- */
+function getPayout(picks, hits) {
+    const table = {
+        1: [0, 1],
+        2: [0, 1, 2],
+        3: [0, 0, 2, 5],
+        4: [0, 0, 1, 4, 10],
+        5: [0, 0, 1, 3, 10, 20],
+        6: [0, 0, 1, 2, 5, 15, 30],
+        7: [0, 0, 1, 2, 5, 10, 20, 50],
+        8: [0, 0, 1, 2, 5, 10, 20, 40, 80],
+        9: [0, 0, 1, 2, 5, 10, 20, 40, 80, 150],
+        10:[0, 0, 1, 2, 5, 10, 20, 40, 80, 150, 300]
+    };
+
+    return table[picks][hits] || 0;
+}
+
+/* ---------------- Play Button ---------------- */
+document.getElementById("playBtn").onclick = () => {
+    const bet = parseFloat(document.getElementById("bet").value);
+    const resultEl = document.getElementById("result");
+
+    if (selected.length === 0) {
+        resultEl.textContent = "Pick at least 1 number.";
+        resultEl.className = "red";
+        return;
+    }
+
+    if (!bet || bet <= 0) {
+        resultEl.textContent = "Enter a valid bet.";
+        resultEl.className = "red";
+        return;
+    }
+
+    if (bet > balance) {
+        resultEl.textContent = "Not enough balance.";
+        resultEl.className = "red";
+        return;
+    }
+
+    balance -= bet;
+    setBalance(balance);
+    document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+    const drawn = [];
+    while (drawn.length < 10) {
+        let r = Math.floor(Math.random() * 25) + 1;
+        if (!drawn.includes(r)) drawn.push(r);
+    }
+
+    let hits = 0;
+
+    [...gridEl.children].forEach(tile => {
+        const num = parseInt(tile.textContent);
+
+        if (drawn.includes(num)) {
+            if (selected.includes(num)) {
+                tile.classList.add("hit");
+                hits++;
+            } else {
+                tile.classList.add("miss");
+            }
+        }
+    });
+
+    const payoutMult = getPayout(selected.length, hits);
+    const winnings = bet * payoutMult;
+
+    if (winnings > 0) {
+        balance += winnings;
+        resultEl.textContent = `WIN +${winnings.toFixed(2)} (${hits} hits)`;
+        resultEl.className = "green";
+    } else {
+        resultEl.textContent = `LOSE (${hits} hits)`;
+        resultEl.className = "red";
+    }
+
+    setBalance(balance);
+    document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+};
+</script>
+
+</body>
+</html>

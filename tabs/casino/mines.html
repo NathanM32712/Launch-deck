@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Mines</title>
+<style>
+    body {
+        margin: 0;
+        background: #0b0b12;
+        color: #f5f5ff;
+        font-family: system-ui, sans-serif;
+        padding: 20px;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 32px;
+        margin-bottom: 10px;
+        color: #cfa8ff;
+    }
+
+    .panel {
+        background: #14141f;
+        border: 1px solid #26263a;
+        border-radius: 12px;
+        padding: 20px;
+        max-width: 480px;
+        margin: 0 auto;
+    }
+
+    #grid {
+        display: grid;
+        grid-template-columns: repeat(5, 60px);
+        grid-gap: 10px;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    .tile {
+        width: 60px;
+        height: 60px;
+        background: #1a1a25;
+        border: 1px solid #26263a;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #4dff88;
+        user-select: none;
+    }
+
+    .mine {
+        background: #ff4d4d !important;
+        color: #fff !important;
+    }
+
+    input, button {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        background: #0f0f0f;
+        color: #fff;
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    button {
+        background: #8a2be2;
+        cursor: pointer;
+    }
+
+    #result {
+        margin-top: 20px;
+        font-size: 28px;
+        font-weight: 700;
+    }
+
+    .green { color: #4dff88; }
+    .red { color: #ff4d4d; }
+
+    #balance {
+        margin-top: 10px;
+        font-size: 18px;
+        color: #a0a0c0;
+    }
+</style>
+</head>
+<body>
+
+<h1>Mines (5×5)</h1>
+
+<div class="panel">
+
+    <input id="bet" type="number" placeholder="Bet amount">
+    <button id="startBtn">Start Game</button>
+    <button id="cashoutBtn" disabled>Cash Out</button>
+
+    <div id="grid"></div>
+
+    <div id="result"></div>
+    <div id="balance"></div>
+</div>
+
+<script>
+/* ---------------- Login Check ---------------- */
+function isLoggedIn() {
+    const match = document.cookie.match(/auth=([^;]+)/);
+    return match && match[1].includes("userlogin:true");
+}
+
+/* ---------------- Shared Casino Balance ---------------- */
+function getBalance() {
+    if (!isLoggedIn()) return 1000;
+    const match = document.cookie.match(/casinoBalance=([^;]+)/);
+    return match ? parseFloat(match[1]) : 1000;
+}
+
+function setBalance(v) {
+    if (!isLoggedIn()) return;
+    document.cookie = "casinoBalance=" + v + ";path=/;max-age=31536000";
+}
+
+let balance = getBalance();
+document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+/* ---------------- Mines Logic ---------------- */
+const gridEl = document.getElementById("grid");
+let mines = [];
+let revealed = 0;
+let betAmount = 0;
+let gameActive = false;
+
+function generateMines() {
+    mines = [];
+    while (mines.length < 5) { // 5 mines
+        let r = Math.floor(Math.random() * 25);
+        if (!mines.includes(r)) mines.push(r);
+    }
+}
+
+function startGame() {
+    gridEl.innerHTML = "";
+    revealed = 0;
+    gameActive = true;
+
+    generateMines();
+
+    for (let i = 0; i < 25; i++) {
+        const tile = document.createElement("div");
+        tile.className = "tile";
+        tile.dataset.index = i;
+
+        tile.onclick = () => revealTile(tile);
+
+        gridEl.appendChild(tile);
+    }
+}
+
+function revealTile(tile) {
+    if (!gameActive) return;
+
+    const index = parseInt(tile.dataset.index);
+
+    if (mines.includes(index)) {
+        tile.classList.add("mine");
+        tile.textContent = "💣";
+        endGame(false);
+        return;
+    }
+
+    tile.style.background = "#2a2a3a";
+    tile.textContent = "✔";
+    tile.onclick = null;
+
+    revealed++;
+
+    if (revealed > 0) {
+        document.getElementById("cashoutBtn").disabled = false;
+    }
+}
+
+function endGame(win) {
+    gameActive = false;
+
+    const resultEl = document.getElementById("result");
+
+    if (!win) {
+        resultEl.textContent = "BOOM! You hit a mine.";
+        resultEl.className = "red";
+        document.getElementById("cashoutBtn").disabled = true;
+        return;
+    }
+
+    const mult = 1 + revealed * 0.3;
+    const winnings = betAmount * mult;
+
+    balance += winnings;
+    setBalance(balance);
+
+    resultEl.textContent = "WIN +" + winnings.toFixed(2);
+    resultEl.className = "green";
+
+    document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+}
+
+/* ---------------- Buttons ---------------- */
+document.getElementById("startBtn").onclick = () => {
+    betAmount = parseFloat(document.getElementById("bet").value);
+
+    if (!betAmount || betAmount <= 0) return;
+    if (betAmount > balance) return;
+
+    balance -= betAmount;
+    setBalance(balance);
+    document.getElementById("balance").textContent = "Balance: $" + balance.toFixed(2);
+
+    document.getElementById("result").textContent = "";
+    document.getElementById("cashoutBtn").disabled = true;
+
+    startGame();
+};
+
+document.getElementById("cashoutBtn").onclick = () => {
+    if (!gameActive) return;
+
+    endGame(true);
+    gameActive = false;
+};
+</script>
+
+</body>
+</html>
