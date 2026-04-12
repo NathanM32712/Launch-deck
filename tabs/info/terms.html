@@ -12,29 +12,39 @@
         color: #e6e6ff;
         font-family: system-ui, sans-serif;
         text-align: center;
-        padding-top: 120px;
+        padding-top: 40px;
     }
 
     .box {
         background: #14141f;
         border: 1px solid #26263a;
         border-radius: 16px;
-        padding: 40px;
-        max-width: 500px;
+        padding: 30px;
+        max-width: 700px;
         margin: 0 auto;
+        height: 70vh;
+        overflow-y: auto;
+        text-align: left;
     }
 
     h1 {
         color: #cfa8ff;
-        margin-bottom: 10px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    h2 {
+        color: #d8b6ff;
+        margin-top: 25px;
     }
 
     p {
         color: #d6c9ff;
-        font-size: 18px;
+        font-size: 16px;
+        line-height: 1.5;
     }
 
-    button {
+    #agreeBtn {
         margin-top: 25px;
         padding: 12px 20px;
         border-radius: 10px;
@@ -42,27 +52,106 @@
         background: #8a2be2;
         color: white;
         font-size: 16px;
-        cursor: pointer;
+        cursor: not-allowed;
+        opacity: 0.4;
         transition: 0.2s;
     }
 
-    button:hover {
+    #agreeBtn.enabled {
+        cursor: pointer;
+        opacity: 1;
+    }
+
+    #agreeBtn.enabled:hover {
         background: #a45cff;
     }
 </style>
 </head>
 <body>
 
-<div class="box">
-    <h1>Terms of Use</h1>
-    <p>You must agree to these terms before using Launch Deck.</p>
-    <p>If you do not agree, you cannot log in.</p>
+<h1>Launch Deck — Terms of Use</h1>
 
-    <button onclick="agree()">I Agree</button>
+<div class="box" id="termsBox">
+
+    <h2>1. Overview</h2>
+    <p>
+        By using Launch Deck, you agree to follow these rules. These terms exist to keep the platform safe,
+        functional, and enjoyable for all users.
+    </p>
+
+    <h2>2. Data & Storage</h2>
+    <p>
+        Launch Deck stores your login status, display name, role, and preferences using cookies and localStorage.
+        By using this site, you agree that Launch Deck may view, modify, or reset your saved data if needed
+        for security, debugging, or platform maintenance.
+    </p>
+
+    <h2>3. Behavior & Communication</h2>
+    <p>
+        Launch Deck may display messages, warnings, or system notices. These messages are not personal and
+        should not be taken harshly. They exist to guide users and maintain platform stability.
+    </p>
+
+    <h2>4. Guest Users</h2>
+    <p>
+        Guests must agree to these terms every time they visit. Guests do not have persistent data, and their
+        progress or settings may reset at any time.
+    </p>
+
+    <h2>5. Accounts</h2>
+    <p>
+        Logged‑in users have persistent data stored in their account file. By logging in, you agree that Launch Deck
+        may update your account data, including:
+        <br>• Terms agreement status  
+        <br>• Display name  
+        <br>• Role  
+        <br>• Purchases or unlocks  
+        <br>• Security flags (ban, warnings, etc.)
+    </p>
+
+    <h2>6. Admin & Owner Rights</h2>
+    <p>
+        Admins and owners may view or modify user data for moderation, debugging, or platform maintenance.
+        This includes the ability to ban, unban, reset data, or adjust roles.
+    </p>
+
+    <h2>7. Bans</h2>
+    <p>
+        If you violate platform rules, you may be banned. Bans are stored in cookies or account data.
+        Attempting to bypass bans may result in permanent restrictions.
+    </p>
+
+    <h2>8. Platform Behavior</h2>
+    <p>
+        Launch Deck may update, change, or remove features at any time. By using the platform, you agree
+        that unexpected behavior may occur and that the platform is provided “as‑is.”
+    </p>
+
+    <h2>9. Agreement</h2>
+    <p>
+        You must agree to these terms before logging in. If you do not agree, you may not use Launch Deck.
+    </p>
+
 </div>
 
+<button id="agreeBtn" onclick="agree()">I Agree</button>
+
 <script>
+const box = document.getElementById("termsBox");
+const btn = document.getElementById("agreeBtn");
+
+// Enable button only after scrolling to bottom
+box.addEventListener("scroll", () => {
+    if (box.scrollTop + box.clientHeight >= box.scrollHeight - 10) {
+        btn.classList.add("enabled");
+        btn.disabled = false;
+        btn.style.cursor = "pointer";
+    }
+});
+
 function agree() {
+    if (!btn.classList.contains("enabled")) return;
+
     localStorage.setItem("agreedToTerms", "true");
     window.location.href = "login.html";
 }
