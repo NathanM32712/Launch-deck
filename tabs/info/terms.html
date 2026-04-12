@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Terms of Use</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    body {
+        margin: 0;
+        background: #0b0b12;
+        color: #e6e6ff;
+        font-family: system-ui, sans-serif;
+        text-align: center;
+        padding-top: 120px;
+    }
+
+    .box {
+        background: #14141f;
+        border: 1px solid #26263a;
+        border-radius: 16px;
+        padding: 40px;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    h1 {
+        color: #cfa8ff;
+        margin-bottom: 10px;
+    }
+
+    p {
+        color: #d6c9ff;
+        font-size: 18px;
+    }
+
+    button {
+        margin-top: 25px;
+        padding: 12px 20px;
+        border-radius: 10px;
+        border: none;
+        background: #8a2be2;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    button:hover {
+        background: #a45cff;
+    }
+</style>
+</head>
+<body>
+
+<div class="box">
+    <h1>Terms of Use</h1>
+    <p>You must agree to these terms before using Launch Deck.</p>
+    <p>If you do not agree, you cannot log in.</p>
+
+    <button onclick="agree()">I Agree</button>
+</div>
+
+<script>
+function agree() {
+    localStorage.setItem("agreedToTerms", "true");
+    window.location.href = "login.html";
+}
+</script>
+
+</body>
+</html>

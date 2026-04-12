@@ -64,7 +64,12 @@
     <button onclick="login()">Login</button>
     <div id="msg"></div>
 </div>
-
+<script>
+// block login page unless terms are agreed
+if (localStorage.getItem("agreedToTerms") !== "true") {
+    window.location.href = "terms.html";
+}
+</script>
 <script>
 function login() {
     const u = document.getElementById("username").value.trim();
