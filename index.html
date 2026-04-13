@@ -227,6 +227,29 @@
 <body>
 
 <script>
+/* ---------------- HOTKEY: SHIFT + C → OPEN CALC ---------------- */
+document.addEventListener("keydown", (e) => {
+    if (e.key.toLowerCase() === "c" && e.shiftKey) {
+
+        // Find the calc tab
+        const calcTab = window.allTabs.find(t =>
+            t.file.replace("tabs/", "").replace(".html", "") === "calc"
+        );
+
+        if (!calcTab) {
+            alert("Calc tab not found.");
+            return;
+        }
+
+        // Switch group
+        setActiveGroup(calcTab.group);
+
+        // Switch tab
+        window.currentTabName = "calc";
+        setActiveTab(calcTab.file);
+    }
+});
+
 // ---------------- BANNED CHECK ----------------
 if (document.cookie.includes("banned=true")) {
     window.location.href = "/banned.html";
