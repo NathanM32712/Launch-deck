@@ -206,7 +206,7 @@
         background: #050509;
     }
 
-    /* SHARE BUTTON */
+    /* SHARE + FULLSCREEN BUTTONS */
     .share-btn {
         padding: 4px 12px;
         border-radius: 999px;
@@ -258,6 +258,9 @@ if (document.cookie.includes("banned=true")) {
 
             <!-- SHARE BUTTON -->
             <div class="share-btn" onclick="copyShareLink()">Copy Link</div>
+
+            <!-- FULLSCREEN BUTTON (dynamic text) -->
+            <div class="share-btn" id="fsBtn" onclick="toggleFullscreen()">Fullscreen</div>
         </div>
 
         <div class="content">
@@ -265,7 +268,6 @@ if (document.cookie.includes("banned=true")) {
         </div>
     </div>
 </div>
-
 <script>
 /* ---------------- AUTH COOKIE READER ---------------- */
 function getAuth() {
@@ -404,12 +406,29 @@ function setActiveTab(file) {
     document.getElementById("mainFrame").src = file;
 }
 
+/* ---------------- FULLSCREEN ---------------- */
+function toggleFullscreen() {
+    const elem = document.getElementById("mainFrame");
+    const btn = document.getElementById("fsBtn");
+
+    if (!document.fullscreenElement) {
+        elem.requestFullscreen().then(() => {
+            btn.textContent = "Exit Fullscreen";
+        });
+    } else {
+        document.exitFullscreen().then(() => {
+            btn.textContent = "Fullscreen";
+        });
+    }
+}
+
 /* ---------------- SHARE LINK ---------------- */
 function copyShareLink() {
     const current = window.currentTabName || "";
     if (!current) return alert("No tab selected.");
 
-    const url = location.origin + location.pathname + "#" + current;
+    const isFS = !!document.fullscreenElement;
+    const url = location.origin + location.pathname + "#" + current + (isFS ? "+fs" : "");
 
     navigator.clipboard.writeText(url).then(() => {
         alert("Share link copied:\n" + url);
@@ -421,17 +440,24 @@ function applyRouteOnce() {
     const hash = location.hash.replace("#", "");
     if (!hash) return;
 
+    const parts = hash.split("+");
+    const tabName = parts[0];
+    const fsFlag = parts[1] === "fs";
+
     const match = window.allTabs.find(t =>
-        t.file.replace("tabs/", "").replace(".html", "") === hash
+        t.file.replace("tabs/", "").replace(".html", "") === tabName
     );
 
     if (match) {
         setActiveGroup(match.group);
-        window.currentTabName = hash;
+        window.currentTabName = tabName;
         setActiveTab(match.file);
+
+        if (fsFlag) {
+            setTimeout(() => toggleFullscreen(), 300);
+        }
     }
 
-    // Remove hash from URL
     history.replaceState(null, "", location.pathname);
 }
 
