@@ -205,6 +205,23 @@
         border: none;
         background: #050509;
     }
+
+    /* SHARE BUTTON */
+    .share-btn {
+        padding: 4px 12px;
+        border-radius: 999px;
+        background: #10101a;
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: 0.2s;
+        font-size: 12px;
+    }
+    .share-btn:hover {
+        background: rgba(138,43,226,0.25);
+        color: var(--text);
+        box-shadow: 0 0 10px rgba(138,43,226,0.6);
+    }
 </style>
 </head>
 <body>
@@ -238,6 +255,9 @@ if (document.cookie.includes("banned=true")) {
             <div id="welcomeBox"></div>
             <div class="user-pill"><span id="userNameLabel">Guest</span></div>
             <div class="user-role" id="userRoleLabel">GUEST</div>
+
+            <!-- SHARE BUTTON -->
+            <div class="share-btn" onclick="copyShareLink()">Copy Link</div>
         </div>
 
         <div class="content">
@@ -350,7 +370,10 @@ function buildTabs(groupTabs) {
             <div class="tab-icon"><img src="${tab.icon}"></div>
             <span>${tab.name}</span>
         `;
-        div.onclick = () => setActiveTab(tab.file);
+        div.onclick = () => {
+            window.currentTabName = tab.file.replace("tabs/", "").replace(".html", "");
+            setActiveTab(tab.file);
+        };
         row.appendChild(div);
     }
 }
@@ -368,7 +391,9 @@ function setActiveGroup(group) {
     buildTabs(groupTabs);
 
     if (groupTabs.length > 0) {
-        setActiveTab(groupTabs[0].file);
+        const first = groupTabs[0].file;
+        window.currentTabName = first.replace("tabs/", "").replace(".html", "");
+        setActiveTab(first);
     }
 }
 
@@ -377,6 +402,37 @@ function setActiveTab(file) {
         el.classList.toggle("active", el.dataset.file === file)
     );
     document.getElementById("mainFrame").src = file;
+}
+
+/* ---------------- SHARE LINK ---------------- */
+function copyShareLink() {
+    const current = window.currentTabName || "";
+    if (!current) return alert("No tab selected.");
+
+    const url = location.origin + location.pathname + "#" + current;
+
+    navigator.clipboard.writeText(url).then(() => {
+        alert("Share link copied:\n" + url);
+    });
+}
+
+/* ---------------- ROUTER (ONE-TIME) ---------------- */
+function applyRouteOnce() {
+    const hash = location.hash.replace("#", "");
+    if (!hash) return;
+
+    const match = window.allTabs.find(t =>
+        t.file.replace("tabs/", "").replace(".html", "") === hash
+    );
+
+    if (match) {
+        setActiveGroup(match.group);
+        window.currentTabName = hash;
+        setActiveTab(match.file);
+    }
+
+    // Remove hash from URL
+    history.replaceState(null, "", location.pathname);
 }
 
 /* ---------------- INIT ---------------- */
@@ -394,8 +450,12 @@ function setActiveTab(file) {
 
     buildGroupTabs(groups);
 
-    const firstGroup = Object.keys(groups)[0] || "info";
-    setActiveGroup(firstGroup);
+    if (location.hash) {
+        applyRouteOnce();
+    } else {
+        const firstGroup = Object.keys(groups)[0] || "info";
+        setActiveGroup(firstGroup);
+    }
 })();
 </script>
 
