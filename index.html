@@ -228,12 +228,13 @@
 
 <script>
 /* ---------------- HOTKEY: SHIFT + C → OPEN CALC ---------------- */
+/* ---------------- HOTKEY: SHIFT + C → OPEN tools/calc.html ---------------- */
 document.addEventListener("keydown", (e) => {
     if (e.key.toLowerCase() === "c" && e.shiftKey) {
 
-        // Find the calc tab
+        // Find the calc tab by exact path
         const calcTab = window.allTabs.find(t =>
-            t.file.replace("tabs/", "").replace(".html", "") === "calc"
+            t.file === "tabs/tools/calc.html"
         );
 
         if (!calcTab) {
@@ -249,6 +250,7 @@ document.addEventListener("keydown", (e) => {
         setActiveTab(calcTab.file);
     }
 });
+
 
 // ---------------- BANNED CHECK ----------------
 if (document.cookie.includes("banned=true")) {
