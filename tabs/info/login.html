@@ -81,7 +81,7 @@ function login() {
     // ---------------- AUTO-BAN ----------------
     if (username === "pilot") {
         document.cookie = "banned=true;path=/;max-age=31536000";
-        window.location.href = "/banned.html";
+        window.location.href = "banned.html";
         return;
     }
 
