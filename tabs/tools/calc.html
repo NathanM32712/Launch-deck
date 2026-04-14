@@ -1,607 +1,243 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Calculator</title>
-<style>
+  <meta charset="UTF-8" />
+  <title>Scientific Calculator</title>
+  <style>
     body {
-        margin: 0;
-        background: #0b0b12;
-        color: #f5f5ff;
-        font-family: system-ui, sans-serif;
-        padding: 20px;
+      background: #111;
+      color: #eee;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
     }
-
-    h1 {
-        font-size: 26px;
-        margin-bottom: 6px;
-        color: #cfa8ff;
+    .calc {
+      background: #1e1e1e;
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.6);
+      width: 340px;
     }
-
-    p {
-        font-size: 14px;
-        color: #c8c8e0;
-        margin-top: 0;
-        margin-bottom: 16px;
-    }
-
-    .layout {
-        display: grid;
-        grid-template-columns: 1fr 280px;
-        gap: 16px;
-    }
-
-    .panel {
-        background: #14141f;
-        border: 1px solid #26263a;
-        border-radius: 12px;
-        padding: 14px;
-    }
-
-    .display-box {
-        background: #000;
-        border-radius: 10px;
-        padding: 12px;
-        margin-bottom: 12px;
-    }
-
-    .secondary {
-        font-size: 13px;
-        color: #a0a0c0;
-        text-align: right;
-        min-height: 18px;
-    }
-
     .display {
-        font-size: 30px;
-        text-align: right;
-        color: #8a2be2;
-        overflow-x: auto;
-        white-space: nowrap;
+      width: 100%;
+      height: 60px;
+      font-size: 24px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: none;
+      margin-bottom: 10px;
+      text-align: right;
+      background: #2a2a2a;
+      color: #d0a4ff;
+      box-sizing: border-box;
     }
-
-    .input-bar {
-        width: 100%;
-        padding: 10px;
-        border-radius: 8px;
-        border: none;
-        background: #0f0f0f;
-        color: #fff;
-        font-size: 15px;
-        margin-bottom: 12px;
+    .row {
+      display: flex;
+      margin-bottom: 6px;
     }
-
-    .grid {
-        display: grid;
-        grid-template-columns: repeat(6, 1fr);
-        gap: 8px;
-    }
-
     button {
-        padding: 12px;
-        border-radius: 8px;
-        border: none;
-        background: #333;
-        color: #fff;
-        font-size: 14px;
-        cursor: pointer;
-        transition: 0.1s;
+      flex: 1;
+      margin: 2px;
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      background: #333;
+      color: #eee;
+      transition: background 0.15s;
     }
-
-    button:active {
-        transform: scale(0.97);
-    }
-
-    .op { background: #ff9500; }
-    .eq { background: #8a2be2; grid-column: span 2; }
-    .wide { grid-column: span 2; }
-    .func { background: #3a3a3a; }
-    .memory { background: #2b2b2b; }
-    .muted { background: #555; }
-
-    .side-title {
-        font-weight: 600;
-        margin-bottom: 6px;
-    }
-
-    .history, .vars {
-        max-height: 300px;
-        overflow-y: auto;
-        background: rgba(255,255,255,0.03);
-        border-radius: 8px;
-        padding: 8px;
-        font-size: 13px;
-    }
-
-    .history-item, .var-item {
-        padding: 6px;
-        border-radius: 6px;
-        cursor: pointer;
-    }
-
-    .history-item:hover, .var-item:hover {
-        background: rgba(255,255,255,0.05);
-    }
-
-    .small-btn {
-        background: #444;
-        padding: 4px 6px;
-        border-radius: 6px;
-        font-size: 12px;
-    }
-</style>
+    button.op { background: #444; }
+    button.fn { background: #3a2f4f; }
+    button.eq { background: #7b3cff; }
+    button.mem { background: #2f3f4f; }
+    button:hover { background: #555; }
+    button.eq:hover { background: #8c54ff; }
+  </style>
 </head>
 <body>
+  <div class="calc">
+    <input id="display" class="display" type="text" value="0" readonly />
 
-<h1>Calculator</h1>
-<p>Supports variables, expressions, functions, history, and symbolic math.</p>
-
-<div class="layout">
-
-    <!-- LEFT SIDE -->
-    <div class="panel">
-
-        <input id="typedInput" class="input-bar" placeholder="Type expression or assignment (e.g., x = 5, 2*x + 3)" autocomplete="off">
-
-        <div class="display-box">
-            <div class="secondary" id="secondary"></div>
-            <div class="display" id="display">0</div>
-        </div>
-
-        <div class="grid" id="buttons">
-
-            <!-- Memory -->
-            <button class="memory" data-action="MC">MC</button>
-            <button class="memory" data-action="MR">MR</button>
-            <button class="memory" data-action="MS">MS</button>
-            <button class="memory" data-action="M+">M+</button>
-            <button class="memory" data-action="M-">M-</button>
-            <button class="func" data-action="C">C</button>
-
-            <!-- Row -->
-            <button class="func" data-action="CE">CE</button>
-            <button class="func" data-action="back">⌫</button>
-            <button class="func" data-action="percent">%</button>
-            <button class="func" data-action="sqrt">√</button>
-            <button class="func" data-action="recip">1/x</button>
-            <button class="op" data-op="/">÷</button>
-
-            <!-- Row -->
-            <button data-num="7">7</button>
-            <button data-num="8">8</button>
-            <button data-num="9">9</button>
-            <button class="func" data-action="pow">^</button>
-            <button class="func" data-action="fact">!</button>
-            <button class="op" data-op="*">×</button>
-
-            <!-- Row -->
-            <button data-num="4">4</button>
-            <button data-num="5">5</button>
-            <button data-num="6">6</button>
-            <button class="func" data-action="sin">sin</button>
-            <button class="func" data-action="cos">cos</button>
-            <button class="op" data-op="-">−</button>
-
-            <!-- Row -->
-            <button data-num="1">1</button>
-            <button data-num="2">2</button>
-            <button data-num="3">3</button>
-            <button class="func" data-action="tan">tan</button>
-            <button class="func" data-action="ln">ln</button>
-            <button class="op" data-op="+">+</button>
-
-            <!-- Row -->
-            <button class="wide" data-num="0">0</button>
-            <button data-num=".">.</button>
-            <button class="func" data-action="neg">±</button>
-            <button class="eq" data-action="equals">=</button>
-
-            <!-- Extra -->
-            <button class="func" data-action="(">(</button>
-            <button class="func" data-action=")">)</button>
-            <button class="func" data-action="log10">log10</button>
-            <button class="func" data-action="asin">asin</button>
-            <button class="func" data-action="acos">acos</button>
-            <button class="func" data-action="atan">atan</button>
-
-            <button class="func" data-action="exp">exp</button>
-            <button class="func" data-action="pi">π</button>
-            <button class="func" data-action="e">e</button>
-            <button class="func" data-action="ans">ANS</button>
-            <button class="func" data-action="percent2">x%</button>
-            <button class="muted" data-action="historyToggle">History</button>
-
-        </div>
+    <!-- Memory / misc row -->
+    <div class="row">
+      <button class="mem" onclick="memClear()">MC</button>
+      <button class="mem" onclick="memRecall()">MR</button>
+      <button class="mem" onclick="memStore()">MS</button>
+      <button class="mem" onclick="memAdd()">M+</button>
+      <button class="mem" onclick="memSub()">M-</button>
     </div>
 
-    <!-- RIGHT SIDE -->
-    <div class="panel">
-
-        <div class="side-title">History</div>
-        <div class="history" id="historyList"></div>
-
-        <div style="display:flex;gap:8px;margin-top:8px">
-            <button class="small-btn" id="copyResult">Copy</button>
-            <button class="small-btn" id="clearHistory">Clear</button>
-        </div>
-
-        <div class="side-title" style="margin-top:16px">Variables</div>
-        <div class="vars" id="varsList"></div>
-
-        <div style="display:flex;gap:8px;margin-top:8px">
-            <button class="small-btn" id="exportVars">Export</button>
-            <button class="small-btn" id="clearVars">Clear Vars</button>
-        </div>
-
+    <!-- Control row -->
+    <div class="row">
+      <button class="op" onclick="clearAll()">AC</button>
+      <button class="op" onclick="backspace()">⌫</button>
+      <button class="op" onclick="insert('%')">%</button>
+      <button class="op" onclick="insert('/')">÷</button>
     </div>
 
-</div>
+    <!-- Number / op rows -->
+    <div class="row">
+      <button onclick="insert('7')">7</button>
+      <button onclick="insert('8')">8</button>
+      <button onclick="insert('9')">9</button>
+      <button class="op" onclick="insert('*')">×</button>
+    </div>
+    <div class="row">
+      <button onclick="insert('4')">4</button>
+      <button onclick="insert('5')">5</button>
+      <button onclick="insert('6')">6</button>
+      <button class="op" onclick="insert('-')">−</button>
+    </div>
+    <div class="row">
+      <button onclick="insert('1')">1</button>
+      <button onclick="insert('2')">2</button>
+      <button onclick="insert('3')">3</button>
+      <button class="op" onclick="insert('+')">+</button>
+    </div>
+    <div class="row">
+      <button onclick="insert('0')">0</button>
+      <button onclick="insert('.')">.</button>
+      <button class="eq" onclick="calculate()">=</button>
+      <button class="op" onclick="insert('(')">(</button>
+    </div>
 
-<script>
-/* ---------------- State ---------------- */
-const typedInput = document.getElementById('typedInput');
-const displayEl = document.getElementById('display');
-const secondaryEl = document.getElementById('secondary');
-const historyListEl = document.getElementById('historyList');
-const varsListEl = document.getElementById('varsList');
+    <!-- Scientific rows -->
+    <div class="row">
+      <button class="fn" onclick="insert('sqrt(')">√</button>
+      <button class="fn" onclick="insert('^')">x^y</button>
+      <button class="fn" onclick="insert(')')">)</button>
+      <button class="fn" onclick="insert('1/(')">1/x</button>
+    </div>
+    <div class="row">
+      <button class="fn" onclick="insert('sin(')">sin</button>
+      <button class="fn" onclick="insert('cos(')">cos</button>
+      <button class="fn" onclick="insert('tan(')">tan</button>
+      <button class="fn" onclick="insert('!')">n!</button>
+    </div>
+    <div class="row">
+      <button class="fn" onclick="insert('asin(')">asin</button>
+      <button class="fn" onclick="insert('acos(')">acos</button>
+      <button class="fn" onclick="insert('atan(')">atan</button>
+      <button class="fn" onclick="insert('exp(')">exp</button>
+    </div>
+    <div class="row">
+      <button class="fn" onclick="insert('log10(')">log10</button>
+      <button class="fn" onclick="insert('ln(')">ln</button>
+      <button class="fn" onclick="insert('pi')">π</button>
+      <button class="fn" onclick="insert('e')">e</button>
+    </div>
+  </div>
 
-let history = [];
-let variables = loadVarsFromCookie();
-let memory = 0;
-let lastAnswer = null;
+  <script>
+    const display = document.getElementById("display");
+    let memory = 0;
 
-/* ---------------- Cookie helpers ---------------- */
-function loadVarsFromCookie(){
-  const name = 'calcVars=';
-  const parts = document.cookie.split(';');
-  for(const part of parts){
-    const p = part.trim();
-    if(p.startsWith(name)){
-      try{
-        return JSON.parse(decodeURIComponent(p.substring(name.length))) || {};
-      }catch(e){ return {}; }
+    function setDisplay(val) {
+      display.value = val.toString();
     }
-  }
-  return {};
-}
-function saveVarsToCookie(){
-  const value = encodeURIComponent(JSON.stringify(variables));
-  document.cookie = 'calcVars=' + value + ';path=/;max-age=31536000';
-}
-function clearVarsCookie(){
-  variables = {};
-  document.cookie = 'calcVars=;path=/;max-age=0';
-}
 
-/* ---------------- UI helpers ---------------- */
-function setDisplay(v){ displayEl.textContent = String(v); }
-function setSecondary(t){ secondaryEl.textContent = t || ''; }
-function addHistory(line){
-  history.unshift(line);
-  if(history.length>300) history.pop();
-  renderHistory();
-}
-function renderHistory(){
-  historyListEl.innerHTML = '';
-  history.forEach(h=>{
-    const div = document.createElement('div');
-    div.className = 'history-item';
-    div.textContent = h;
-    div.onclick = ()=> {
-      typedInput.value = h.split(' = ')[0];
-      typedInput.focus();
-    };
-    historyListEl.appendChild(div);
-  });
-}
-function renderVars(){
-  varsListEl.innerHTML = '';
-  const keys = Object.keys(variables).sort();
-  if(keys.length === 0){
-    varsListEl.innerHTML = '<div class="small">No stored variables</div>';
-    return;
-  }
-  keys.forEach(k=>{
-    const div = document.createElement('div');
-    div.className = 'var-item';
-    div.textContent = k + ' = ' + variables[k];
-    div.onclick = ()=> {
-      typedInput.value += k;
-      typedInput.focus();
-    };
-    varsListEl.appendChild(div);
-  });
-}
-
-/* ---------------- Parsing & evaluation ---------------- */
-function normalizeInput(s){
-  if(!s) return '';
-  let t = s.trim();
-  t = t.replace(/×/g,'*').replace(/÷/g,'/').replace(/–/g,'-').replace(/−/g,'-');
-  t = t.replace(/\^/g,'**');
-  return t;
-}
-
-function substituteVars(expr){
-  return expr.replace(/\b[a-zA-Z_][a-zA-Z0-9_]*\b/g, name=>{
-    if(name === 'pi' || name === 'e') return name;
-    if(name in variables){
-      return '(' + variables[name] + ')';
+    function insert(val) {
+      if (display.value === "0" || display.value === "Error") {
+        display.value = "";
+      }
+      display.value += val;
     }
-    return name;
-  });
-}
 
-function containsSymbol(expr){
-  return /\b(?!pi\b|e\b)[a-zA-Z_][a-zA-Z0-9_]*\b/.test(expr);
-}
-
-function symbolicSimplify(expr){
-  let s = expr;
-  s = s.replace(/^\((.*)\)$/, '$1');
-  s = s.replace(/(\d+(?:\.\d+)?)\s*\*\s*\(([a-zA-Z_][a-zA-Z0-9_]*(?:\*[a-zA-Z_][a-zA-Z0-9_]*)*)\)/g, (m, n, vars)=> n + '*' + vars);
-  s = s.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\s*\*\s*([a-zA-Z_][a-zA-Z0-9_]*)/g, '$1·$2');
-  s = s.replace(/(\d+(?:\.\d+)?)\s*\*\s*([a-zA-Z_][a-zA-Z0-9_]*)/g, '$1$2');
-  s = s.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\s*\*\s*(\d+(?:\.\d+)?)/g, '$2$1');
-  s = s.replace(/([a-zA-Z_][a-zA-Z0-9_]*)(?:·\1)+/g, m=>{
-    const parts = m.split('·');
-    return parts[0] + '^' + parts.length;
-  });
-  s = s.replace(/(\d+(?:\.\d+)?)\s*\*\s*(\d+(?:\.\d+)?)/g, (m,a,b)=> String(parseFloat(a)*parseFloat(b)));
-  s = s.replace(/\*\*/g,'^');
-  s = s.replace(/\((\w+)\)/g,'$1');
-  return s;
-}
-
-function evaluateExpression(raw){
-  const normalized = normalizeInput(raw);
-  const substituted = substituteVars(normalized);
-
-  if(containsSymbol(substituted)){
-    return { type: 'symbolic', value: symbolicSimplify(substituted) };
-  }
-
-  const jsExpr = substituted.replace(/\bpi\b/g, 'Math.PI').replace(/\be\b/g, 'Math.E');
-
-  const wrapper = `
-    const sin = Math.sin, cos = Math.cos, tan = Math.tan,
-          asin = Math.asin, acos = Math.acos, atan = Math.atan,
-          sqrt = Math.sqrt, ln = Math.log, log10 = Math.log10 || ((x)=>Math.log(x)/Math.LN10),
-          exp = Math.exp, abs = Math.abs, pow = Math.pow;
-    return (${jsExpr});
-  `;
-  try{
-    const fn = new Function(wrapper);
-    const val = fn();
-    if(typeof val === 'number' && isFinite(val)){
-      return { type: 'number', value: val };
+    function clearAll() {
+      setDisplay("0");
     }
-    return { type: 'error', value: 'Error' };
-  }catch(e){
-    return { type: 'error', value: 'Error' };
-  }
-}
 
-/* ---------------- Main input ---------------- */
-function handleEnter(){
-  const raw = typedInput.value.trim();
-  if(raw === '') return;
-
-  const inspectMatch = raw.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\s*=$/);
-  if(inspectMatch){
-    const name = inspectMatch[1];
-    if(name in variables){
-      setSecondary(name + ' =');
-      setDisplay(variables[name]);
-      addHistory(name + ' = ' + variables[name]);
-    } else {
-      setDisplay(name + ' is undefined');
+    function backspace() {
+      if (display.value.length <= 1 || display.value === "Error") {
+        setDisplay("0");
+      } else {
+        display.value = display.value.slice(0, -1);
+      }
     }
-    return;
-  }
 
-  const assignMatch = raw.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$/);
-  if(assignMatch){
-    const name = assignMatch[1];
-    const rhs = assignMatch[2].trim();
-    variables[name] = normalizeInput(rhs);
-    saveVarsToCookie();
-    setSecondary('stored: ' + name);
-    setDisplay(variables[name]);
-    addHistory(name + ' = ' + variables[name]);
-    typedInput.value = '';
-    return;
-  }
+    // Memory functions
+    function memClear() { memory = 0; }
+    function memRecall() { setDisplay(memory); }
+    function memStore() {
+      const v = safeEval(display.value);
+      if (v !== null) memory = v;
+    }
+    function memAdd() {
+      const v = safeEval(display.value);
+      if (v !== null) memory += v;
+    }
+    function memSub() {
+      const v = safeEval(display.value);
+      if (v !== null) memory -= v;
+    }
 
-  const result = evaluateExpression(raw);
-  setSecondary(raw);
+    // Factorial helper
+    function factorial(n) {
+      n = Math.floor(n);
+      if (n < 0) return NaN;
+      let res = 1;
+      for (let i = 2; i <= n; i++) res *= i;
+      return res;
+    }
 
-  if(result.type === 'number'){
-    setDisplay(result.value);
-    lastAnswer = result.value;
-    addHistory(raw + ' = ' + result.value);
-    typedInput.value = String(result.value);
-  } else if(result.type === 'symbolic'){
-    setDisplay(result.value);
-    lastAnswer = null;
-    addHistory(raw + ' = ' + result.value);
-    typedInput.value = result.value;
-  } else {
-    setDisplay('Error');
-  }
-}
+    function transformExpression(expr) {
+      // constants
+      expr = expr.replace(/\bpi\b/gi, "Math.PI");
+      expr = expr.replace(/\be\b/g, "Math.E");
 
-/* ---------------- Buttons ---------------- */
-document.querySelectorAll('button').forEach(btn=>{
-  const num = btn.dataset.num;
-  const op = btn.dataset.op;
-  const action = btn.dataset.action;
+      // sqrt -> Math.sqrt  (THIS makes sqrt give the square root)
+      expr = expr.replace(/sqrt\s*\(/gi, "Math.sqrt(");
 
-  if(num !== undefined){
-    btn.onclick = ()=> typedInput.value += num;
-  }
-  else if(op !== undefined){
-    btn.onclick = ()=> typedInput.value += op;
-  }
-  else if(action){
-    btn.onclick = ()=> {
-      if(action === 'equals') return handleEnter();
-      if(action === 'back') return typedInput.value = typedInput.value.slice(0,-1);
-      if(action === 'C'){ typedInput.value=''; setDisplay('0'); setSecondary(''); return; }
-      if(action === 'pi'){ typedInput.value += 'pi'; return; }
-      if(action === 'e'){ typedInput.value += 'e'; return; }
-      if(action === '(' || action === ')'){ typedInput.value += action; return; }
-      if(action === 'ans'){ if(lastAnswer!==null) typedInput.value += lastAnswer; return; }
+      // log10, ln
+      expr = expr.replace(/log10\s*\(/gi, "Math.log10(");
+      expr = expr.replace(/ln\s*\(/gi, "Math.log(");
 
-      if(action === 'percent'){
-        typedInput.value += '/100';
-        return;
-      }
+      // trig
+      expr = expr.replace(/sin\s*\(/gi, "Math.sin(");
+      expr = expr.replace(/cos\s*\(/gi, "Math.cos(");
+      expr = expr.replace(/tan\s*\(/gi, "Math.tan(");
+      expr = expr.replace(/asin\s*\(/gi, "Math.asin(");
+      expr = expr.replace(/acos\s*\(/gi, "Math.acos(");
+      expr = expr.replace(/atan\s*\(/gi, "Math.atan(");
 
-      if(action === 'percent2'){
-        typedInput.value = '(' + typedInput.value + ')/100';
-        return;
-      }
+      // exp
+      expr = expr.replace(/exp\s*\(/gi, "Math.exp(");
 
-      if(action === 'neg'){
-        const val = typedInput.value.trim();
-        if(val.startsWith('-')) typedInput.value = val.slice(1);
-        else typedInput.value = '-' + val;
-        return;
-      }
+      // power: a^b -> Math.pow(a,b)
+      expr = expr.replace(/(\d+(\.\d+)?|\bMath\.PI\b|\bMath\.E\b|\))\s*\^\s*(\d+(\.\d+)?|\bMath\.PI\b|\bMath\.E\b|\()/g,
+        "Math.pow($1,$3)");
 
-      if(action === 'sqrt'){
-        typedInput.value = 'sqrt(' + typedInput.value + ')';
-        return;
-      }
+      // factorial: n! -> factorial(n)
+      expr = expr.replace(/(\d+(\.\d+)?)!/g, "factorial($1)");
 
-      if(action === 'recip'){
-        const val = typedInput.value.trim();
-        if(val){
-          typedInput.value = '1/(' + val + ')';
+      return expr;
+    }
+
+    function safeEval(raw) {
+      try {
+        const expr = transformExpression(raw);
+        const result = eval(expr);
+        if (typeof result === "number" && isFinite(result)) {
+          return result;
         }
-        return;
+        return null;
+      } catch {
+        return null;
       }
-
-      if(action === 'fact'){
-        const val = typedInput.value.trim();
-        typedInput.value = 'fact(' + val + ')';
-        return;
-      }
-
-      if(action === 'sin'){ typedInput.value = 'sin(' + typedInput.value + ')'; return; }
-      if(action === 'cos'){ typedInput.value = 'cos(' + typedInput.value + ')'; return; }
-      if(action === 'tan'){ typedInput.value = 'tan(' + typedInput.value + ')'; return; }
-      if(action === 'asin'){ typedInput.value = 'asin(' + typedInput.value + ')'; return; }
-      if(action === 'acos'){ typedInput.value = 'acos(' + typedInput.value + ')'; return; }
-      if(action === 'atan'){ typedInput.value = 'atan(' + typedInput.value + ')'; return; }
-      if(action === 'ln'){ typedInput.value = 'ln(' + typedInput.value + ')'; return; }
-      if(action === 'log10'){ typedInput.value = 'log10(' + typedInput.value + ')'; return; }
-      if(action === 'exp'){ typedInput.value = 'exp(' + typedInput.value + ')'; return; }
-
-      if(action === 'historyToggle'){
-        // no-op (history always visible in new layout)
-        return;
-      }
-
-      if(action === 'CE'){
-        typedInput.value = '';
-        return;
-      }
-    };
-  }
-});
-
-/* ---------------- Keyboard support ---------------- */
-document.addEventListener('keydown', (e)=>{
-  const key = e.key;
-
-  if(document.activeElement === typedInput){
-    if(key === 'Enter'){
-      e.preventDefault();
-      handleEnter();
     }
-    return;
-  }
 
-  if(key === ' '){
-    e.preventDefault();
-    typedInput.value = '';
-    setSecondary('');
-    setDisplay('0');
-    typedInput.focus();
-    return;
-  }
-
-  if(!isNaN(key)){
-    typedInput.value += key;
-    typedInput.focus();
-    return;
-  }
-
-  if(key === '.'){
-    typedInput.value += '.';
-    typedInput.focus();
-    return;
-  }
-
-  if(['+','-','*','/','^'].includes(key)){
-    typedInput.value += key;
-    typedInput.focus();
-    return;
-  }
-
-  if(key === 'Enter' || key === '='){
-    e.preventDefault();
-    handleEnter();
-    return;
-  }
-
-  if(key === 'Backspace'){
-    typedInput.value = typedInput.value.slice(0,-1);
-    typedInput.focus();
-    return;
-  }
-
-  if(key === '(' || key === ')'){
-    typedInput.value += key;
-    typedInput.focus();
-    return;
-  }
-});
-
-/* ---------------- History & vars controls ---------------- */
-document.getElementById('copyResult').onclick = ()=>{
-  navigator.clipboard?.writeText(displayEl.textContent);
-};
-
-document.getElementById('clearHistory').onclick = ()=>{
-  history = [];
-  renderHistory();
-};
-
-document.getElementById('exportVars').onclick = ()=>{
-  const data = JSON.stringify(variables, null, 2);
-  prompt('Variables JSON:', data);
-};
-
-document.getElementById('clearVars').onclick = ()=>{
-  if(confirm('Clear all stored variables?')){
-    clearVarsCookie();
-    renderVars();
-  }
-};
-
-/* ---------------- Init ---------------- */
-function init(){
-  setDisplay('0');
-  setSecondary('');
-  renderHistory();
-  renderVars();
-  typedInput.focus();
-}
-init();
-</script>
-
+    function calculate() {
+      const result = safeEval(display.value);
+      if (result === null) {
+        setDisplay("Error");
+      } else {
+        setDisplay(result);
+      }
+    }
+  </script>
 </body>
 </html>
