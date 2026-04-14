@@ -1,243 +1,248 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Scientific Calculator</title>
-  <style>
-    body {
-      background: #111;
-      color: #eee;
-      font-family: system-ui, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .calc {
-      background: #1e1e1e;
-      padding: 16px;
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.6);
-      width: 340px;
-    }
-    .display {
-      width: 100%;
-      height: 60px;
-      font-size: 24px;
-      padding: 8px 10px;
-      border-radius: 8px;
-      border: none;
-      margin-bottom: 10px;
-      text-align: right;
-      background: #2a2a2a;
-      color: #d0a4ff;
-      box-sizing: border-box;
-    }
-    .row {
-      display: flex;
-      margin-bottom: 6px;
-    }
-    button {
-      flex: 1;
-      margin: 2px;
-      padding: 10px;
-      font-size: 14px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      background: #333;
-      color: #eee;
-      transition: background 0.15s;
-    }
-    button.op { background: #444; }
-    button.fn { background: #3a2f4f; }
-    button.eq { background: #7b3cff; }
-    button.mem { background: #2f3f4f; }
-    button:hover { background: #555; }
-    button.eq:hover { background: #8c54ff; }
-  </style>
+<meta charset="UTF-8">
+<title>Scientific Calculator</title>
+<style>
+  body {
+    background: #0f0f0f;
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  .calc {
+    width: 95vw;
+    height: 95vh;
+    background: #1a1a1a;
+    padding: 20px;
+    border-radius: 14px;
+    box-shadow: 0 0 25px rgba(0,0,0,0.6);
+    display: flex;
+    flex-direction: column;
+  }
+
+  #display {
+    width: 100%;
+    height: 80px;
+    background: #2a1f33;
+    color: #c38aff;
+    font-size: 40px;
+    border: none;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: right;
+    box-sizing: border-box;
+    margin-bottom: 12px;
+  }
+
+  .grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-auto-rows: minmax(60px, 1fr);
+    gap: 8px;
+  }
+
+  button {
+    font-size: 20px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    background: #333;
+    color: #eee;
+    transition: 0.15s;
+  }
+
+  button:hover { background: #555; }
+  .op { background: #4a3f2f; }
+  .fn { background: #2f3f4f; }
+  .eq { background: #7b3cff; }
+  .eq:hover { background: #8c54ff; }
+  .mem { background: #2f2f4f; }
+</style>
 </head>
 <body>
-  <div class="calc">
-    <input id="display" class="display" type="text" value="0" readonly />
 
-    <!-- Memory / misc row -->
-    <div class="row">
-      <button class="mem" onclick="memClear()">MC</button>
-      <button class="mem" onclick="memRecall()">MR</button>
-      <button class="mem" onclick="memStore()">MS</button>
-      <button class="mem" onclick="memAdd()">M+</button>
-      <button class="mem" onclick="memSub()">M-</button>
-    </div>
+<div class="calc">
+  <input id="display" type="text" readonly>
 
-    <!-- Control row -->
-    <div class="row">
-      <button class="op" onclick="clearAll()">AC</button>
-      <button class="op" onclick="backspace()">⌫</button>
-      <button class="op" onclick="insert('%')">%</button>
-      <button class="op" onclick="insert('/')">÷</button>
-    </div>
+  <div class="grid">
+    <!-- Memory -->
+    <button class="mem" onclick="memClear()">MC</button>
+    <button class="mem" onclick="memRecall()">MR</button>
+    <button class="mem" onclick="memStore()">MS</button>
+    <button class="mem" onclick="memAdd()">M+</button>
+    <button class="mem" onclick="memSub()">M-</button>
+    <button class="op" onclick="clearAll()">AC</button>
 
-    <!-- Number / op rows -->
-    <div class="row">
-      <button onclick="insert('7')">7</button>
-      <button onclick="insert('8')">8</button>
-      <button onclick="insert('9')">9</button>
-      <button class="op" onclick="insert('*')">×</button>
-    </div>
-    <div class="row">
-      <button onclick="insert('4')">4</button>
-      <button onclick="insert('5')">5</button>
-      <button onclick="insert('6')">6</button>
-      <button class="op" onclick="insert('-')">−</button>
-    </div>
-    <div class="row">
-      <button onclick="insert('1')">1</button>
-      <button onclick="insert('2')">2</button>
-      <button onclick="insert('3')">3</button>
-      <button class="op" onclick="insert('+')">+</button>
-    </div>
-    <div class="row">
-      <button onclick="insert('0')">0</button>
-      <button onclick="insert('.')">.</button>
-      <button class="eq" onclick="calculate()">=</button>
-      <button class="op" onclick="insert('(')">(</button>
-    </div>
+    <!-- Scientific -->
+    <button class="fn" onclick="applySqrt()">√</button>
+    <button class="fn" onclick="insert('^')">^</button>
+    <button class="fn" onclick="insert('(')">(</button>
+    <button class="fn" onclick="insert(')')">)</button>
+    <button class="fn" onclick="insert('1/(')">1/x</button>
+    <button class="fn" onclick="insert('%')">%</button>
 
-    <!-- Scientific rows -->
-    <div class="row">
-      <button class="fn" onclick="insert('sqrt(')">√</button>
-      <button class="fn" onclick="insert('^')">x^y</button>
-      <button class="fn" onclick="insert(')')">)</button>
-      <button class="fn" onclick="insert('1/(')">1/x</button>
-    </div>
-    <div class="row">
-      <button class="fn" onclick="insert('sin(')">sin</button>
-      <button class="fn" onclick="insert('cos(')">cos</button>
-      <button class="fn" onclick="insert('tan(')">tan</button>
-      <button class="fn" onclick="insert('!')">n!</button>
-    </div>
-    <div class="row">
-      <button class="fn" onclick="insert('asin(')">asin</button>
-      <button class="fn" onclick="insert('acos(')">acos</button>
-      <button class="fn" onclick="insert('atan(')">atan</button>
-      <button class="fn" onclick="insert('exp(')">exp</button>
-    </div>
-    <div class="row">
-      <button class="fn" onclick="insert('log10(')">log10</button>
-      <button class="fn" onclick="insert('ln(')">ln</button>
-      <button class="fn" onclick="insert('pi')">π</button>
-      <button class="fn" onclick="insert('e')">e</button>
-    </div>
+    <button class="fn" onclick="insert('sin(')">sin</button>
+    <button class="fn" onclick="insert('cos(')">cos</button>
+    <button class="fn" onclick="insert('tan(')">tan</button>
+    <button class="fn" onclick="insert('asin(')">asin</button>
+    <button class="fn" onclick="insert('acos(')">acos</button>
+    <button class="fn" onclick="insert('atan(')">atan</button>
+
+    <button class="fn" onclick="insert('log10(')">log10</button>
+    <button class="fn" onclick="insert('ln(')">ln</button>
+    <button class="fn" onclick="insert('exp(')">exp</button>
+    <button class="fn" onclick="insert('pi')">π</button>
+    <button class="fn" onclick="insert('e')">e</button>
+    <button class="fn" onclick="insert('!')">n!</button>
+
+    <!-- Numbers -->
+    <button onclick="insert('7')">7</button>
+    <button onclick="insert('8')">8</button>
+    <button onclick="insert('9')">9</button>
+    <button class="op" onclick="insert('/')">÷</button>
+    <button class="op" onclick="backspace()">⌫</button>
+    <button class="eq" onclick="calculate()">=</button>
+
+    <button onclick="insert('4')">4</button>
+    <button onclick="insert('5')">5</button>
+    <button onclick="insert('6')">6</button>
+    <button class="op" onclick="insert('*')">×</button>
+    <button onclick="insert('.')">.</button>
+    <button onclick="insert('0')">0</button>
+
+    <button onclick="insert('1')">1</button>
+    <button onclick="insert('2')">2</button>
+    <button onclick="insert('3')">3</button>
+    <button class="op" onclick="insert('-')">−</button>
+    <button class="op" onclick="insert('+')">+</button>
+    <button class="eq" onclick="calculate()">=</button>
   </div>
+</div>
 
-  <script>
-    const display = document.getElementById("display");
-    let memory = 0;
+<script>
+  const display = document.getElementById("display");
+  let memory = 0;
+  let vars = {};
 
-    function setDisplay(val) {
-      display.value = val.toString();
+  // Load variables from cookie
+  function loadVars() {
+    const c = document.cookie.split("; ").find(r => r.startsWith("calcvars="));
+    if (!c) return;
+    try { vars = JSON.parse(decodeURIComponent(c.split("=")[1])); }
+    catch { vars = {}; }
+  }
+
+  // Save variables to cookie
+  function saveVars() {
+    document.cookie = "calcvars=" + encodeURIComponent(JSON.stringify(vars)) + "; path=/; max-age=31536000";
+  }
+
+  loadVars();
+
+  function insert(v) {
+    if (display.value === "0" || display.value === "Error") display.value = "";
+    display.value += v;
+  }
+
+  function clearAll() { display.value = ""; }
+  function backspace() { display.value = display.value.slice(0, -1); }
+
+  // Memory
+  function memClear() { memory = 0; }
+  function memRecall() { display.value = memory; }
+  function memStore() { memory = safeEval(display.value) ?? 0; }
+  function memAdd() { memory += safeEval(display.value) ?? 0; }
+  function memSub() { memory -= safeEval(display.value) ?? 0; }
+
+  function factorial(n) {
+    n = Math.floor(n);
+    if (n < 0) return NaN;
+    let r = 1;
+    for (let i = 2; i <= n; i++) r *= i;
+    return r;
+  }
+
+  // √ button: take current expression, evaluate, then sqrt the result
+  function applySqrt() {
+    const val = display.value.trim();
+    if (!val) return;
+    const base = safeEval(val);
+    if (base === null) {
+      display.value = "Error";
+      return;
     }
+    display.value = Math.sqrt(base);
+  }
 
-    function insert(val) {
-      if (display.value === "0" || display.value === "Error") {
-        display.value = "";
-      }
-      display.value += val;
-    }
-
-    function clearAll() {
-      setDisplay("0");
-    }
-
-    function backspace() {
-      if (display.value.length <= 1 || display.value === "Error") {
-        setDisplay("0");
-      } else {
-        display.value = display.value.slice(0, -1);
-      }
-    }
-
-    // Memory functions
-    function memClear() { memory = 0; }
-    function memRecall() { setDisplay(memory); }
-    function memStore() {
-      const v = safeEval(display.value);
-      if (v !== null) memory = v;
-    }
-    function memAdd() {
-      const v = safeEval(display.value);
-      if (v !== null) memory += v;
-    }
-    function memSub() {
-      const v = safeEval(display.value);
-      if (v !== null) memory -= v;
-    }
-
-    // Factorial helper
-    function factorial(n) {
-      n = Math.floor(n);
-      if (n < 0) return NaN;
-      let res = 1;
-      for (let i = 2; i <= n; i++) res *= i;
-      return res;
-    }
-
-    function transformExpression(expr) {
-      // constants
-      expr = expr.replace(/\bpi\b/gi, "Math.PI");
-      expr = expr.replace(/\be\b/g, "Math.E");
-
-      // sqrt -> Math.sqrt  (THIS makes sqrt give the square root)
-      expr = expr.replace(/sqrt\s*\(/gi, "Math.sqrt(");
-
-      // log10, ln
-      expr = expr.replace(/log10\s*\(/gi, "Math.log10(");
-      expr = expr.replace(/ln\s*\(/gi, "Math.log(");
-
-      // trig
-      expr = expr.replace(/sin\s*\(/gi, "Math.sin(");
-      expr = expr.replace(/cos\s*\(/gi, "Math.cos(");
-      expr = expr.replace(/tan\s*\(/gi, "Math.tan(");
-      expr = expr.replace(/asin\s*\(/gi, "Math.asin(");
-      expr = expr.replace(/acos\s*\(/gi, "Math.acos(");
-      expr = expr.replace(/atan\s*\(/gi, "Math.atan(");
-
-      // exp
-      expr = expr.replace(/exp\s*\(/gi, "Math.exp(");
-
-      // power: a^b -> Math.pow(a,b)
-      expr = expr.replace(/(\d+(\.\d+)?|\bMath\.PI\b|\bMath\.E\b|\))\s*\^\s*(\d+(\.\d+)?|\bMath\.PI\b|\bMath\.E\b|\()/g,
-        "Math.pow($1,$3)");
-
-      // factorial: n! -> factorial(n)
-      expr = expr.replace(/(\d+(\.\d+)?)!/g, "factorial($1)");
-
-      return expr;
-    }
-
-    function safeEval(raw) {
-      try {
-        const expr = transformExpression(raw);
-        const result = eval(expr);
-        if (typeof result === "number" && isFinite(result)) {
-          return result;
-        }
-        return null;
-      } catch {
-        return null;
+  function transform(expr) {
+    // variable assignment
+    if (expr.includes("=")) {
+      const [name, value] = expr.split("=");
+      const v = safeEval(value);
+      if (v !== null) {
+        vars[name.trim()] = v;
+        saveVars();
+        return v;
       }
     }
 
-    function calculate() {
-      const result = safeEval(display.value);
-      if (result === null) {
-        setDisplay("Error");
-      } else {
-        setDisplay(result);
-      }
+    // replace variables
+    for (const v in vars) {
+      expr = expr.replace(new RegExp("\\b" + v + "\\b", "g"), vars[v]);
     }
-  </script>
+
+    expr = expr.replace(/\bpi\b/gi, "Math.PI");
+    expr = expr.replace(/\be\b/g, "Math.E");
+
+    // keep support for typed sqrt(
+    expr = expr.replace(/sqrt\s*\(/gi, "Math.sqrt(");
+    expr = expr.replace(/log10\s*\(/gi, "Math.log10(");
+    expr = expr.replace(/ln\s*\(/gi, "Math.log(");
+
+    expr = expr.replace(/sin\s*\(/gi, "Math.sin(");
+    expr = expr.replace(/cos\s*\(/gi, "Math.cos(");
+    expr = expr.replace(/tan\s*\(/gi, "Math.tan(");
+    expr = expr.replace(/asin\s*\(/gi, "Math.asin(");
+    expr = expr.replace(/acos\s*\(/gi, "Math.acos(");
+    expr = expr.replace(/atan\s*\(/gi, "Math.atan(");
+
+    expr = expr.replace(/exp\s*\(/gi, "Math.exp(");
+
+    // power operator
+    expr = expr.replace(/(\d+|\))\s*\^\s*(\d+|\()/g, "Math.pow($1,$2)");
+
+    // factorial
+    expr = expr.replace(/(\d+)!/g, "factorial($1)");
+
+    return expr;
+  }
+
+  function safeEval(raw) {
+    try { return eval(transform(raw)); }
+    catch { return null; }
+  }
+
+  function calculate() {
+    const result = safeEval(display.value);
+    display.value = result ?? "Error";
+  }
+
+  // Keyboard typing
+  document.addEventListener("keydown", e => {
+    const k = e.key;
+
+    if (!isNaN(k)) insert(k);
+    if ("+-*/().^".includes(k)) insert(k);
+    if (k === "Enter") calculate();
+    if (k === "Backspace") backspace();
+  });
+</script>
+
 </body>
 </html>
