@@ -14,9 +14,9 @@ window.launchdeckTabs = [
 
     // ---------------- TOOLS ----------------
     // Tools require login
-    "tools/mapquiz.html|guests",    
-    "tools/clock.html|user",
-    "tools/calc.html|user",
+    "tools/mapquiz.html|guest",    
+    "tools/clock.html|guest",
+    "tools/calc.html|guest",
 
 
     // ---------------- GAMES ----------------
